@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/source/">
+    <Project Path="source/Shoko.Plugin.TvMaze.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Shoko.Plugin.TvMaze.Tests.csproj" />
+  </Folder>
+</Solution>
