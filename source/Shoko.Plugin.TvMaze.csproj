@@ -26,7 +26,7 @@
             in-progress checkout instead of the last published pre-release,
             which predates it.
         -->
-        <ProjectReference Include="../../Shoko/Shoko.Abstractions/Shoko.Abstractions.csproj" ExcludeAssets="runtime" Private="false" />
+        <PackageReference Include="Shoko.Abstractions" Version="6.0.0-alpha.89" ExcludeAssets="runtime" />
         <PackageReference Include="Shoko.QueueProcessor" Version="6.0.0-alpha.6" ExcludeAssets="runtime" />
     </ItemGroup>
 
