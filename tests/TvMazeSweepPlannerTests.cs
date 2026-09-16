@@ -1,4 +1,7 @@
 using System;
+using Moq;
+using Shoko.Abstractions.Metadata;
+using Shoko.Abstractions.Metadata.Tmdb;
 using Shoko.Plugin.TvMaze.Mapping;
 using Xunit;
 
@@ -56,5 +59,46 @@ public class TvMazeSweepPlannerTests
         var longEnded = Today.AddYears(-10);
 
         Assert.True(TvMazeSweepPlanner.ShouldSweep(hasTvdbShowId: true, endDate: longEnded, stopSweepingEndedShowsAfterDays: stopAfterDays, today: Today));
+    }
+
+    [Fact]
+    public void The_plan_counts_everything_it_leaves_out()
+    {
+        var series = new ISeries[]
+        {
+            TmdbMovieShapedSeries(),
+            TmdbShow(tvdbShowId: null, endDate: null),
+            TmdbShow(tvdbShowId: 1, endDate: Today.AddDays(-61)),
+            TmdbShow(tvdbShowId: 2, endDate: Today.AddDays(-10)),
+            TmdbShow(tvdbShowId: 3, endDate: null),
+        };
+
+        var plan = TvMazeSweepPlanner.Plan(series, stopSweepingEndedShowsAfterDays: 60, today: Today);
+
+        Assert.Equal(5, plan.TotalSeries);
+        Assert.Equal(1, plan.NotAShow);
+        Assert.Equal(1, plan.WithoutTvdbShowID);
+        Assert.Equal(1, plan.EndedTooLongAgo);
+        Assert.Equal(2, plan.Shows.Count);
+    }
+
+    [Fact]
+    public void An_empty_metadata_service_plans_an_empty_sweep()
+    {
+        var plan = TvMazeSweepPlanner.Plan([], stopSweepingEndedShowsAfterDays: 60, today: Today);
+
+        Assert.Empty(plan.Shows);
+        Assert.Equal(0, plan.TotalSeries);
+    }
+
+    private static ISeries TmdbMovieShapedSeries()
+        => new Mock<ISeries>().Object;
+
+    private static ITmdbShow TmdbShow(int? tvdbShowId, DateOnly? endDate)
+    {
+        var show = new Mock<ITmdbShow>();
+        show.Setup(s => s.TvdbShowID).Returns(tvdbShowId);
+        show.Setup(s => s.EndDate).Returns(endDate is { } date ? new PartialDateOnly(date) : null);
+        return show.Object;
     }
 }

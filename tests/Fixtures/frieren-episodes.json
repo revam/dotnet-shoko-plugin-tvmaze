@@ -1,0 +1,68 @@
+[
+  {
+    "id": 2647250,
+    "name": "The Journey's End",
+    "season": 1,
+    "number": 1,
+    "type": "regular",
+    "airdate": "2023-09-29",
+    "airtime": "21:00",
+    "airstamp": "2023-09-29T12:00:00+00:00",
+    "runtime": 25
+  },
+  {
+    "id": 2655203,
+    "name": "It Didn't Have to Be Magic...",
+    "season": 1,
+    "number": 2,
+    "type": "regular",
+    "airdate": "2023-09-29",
+    "airtime": "21:00",
+    "airstamp": "2023-09-29T12:00:00+00:00",
+    "runtime": 26
+  },
+  {
+    "id": 2655204,
+    "name": "Killing Magic",
+    "season": 1,
+    "number": 3,
+    "type": "regular",
+    "airdate": "2023-09-29",
+    "airtime": "21:00",
+    "airstamp": "2023-09-29T12:00:00+00:00",
+    "runtime": 24
+  },
+  {
+    "id": 3449494,
+    "name": "Shall We Go, Then?",
+    "season": 2,
+    "number": 1,
+    "type": "regular",
+    "airdate": "2026-01-16",
+    "airtime": "01:00",
+    "airstamp": "2026-01-16T16:00:00+00:00",
+    "runtime": 24
+  },
+  {
+    "id": 3526004,
+    "name": "The Hero of the South",
+    "season": 2,
+    "number": 2,
+    "type": "regular",
+    "airdate": "2026-01-23",
+    "airtime": "01:00",
+    "airstamp": "2026-01-23T16:00:00+00:00",
+    "runtime": 23
+  },
+  {
+    "id": 3526005,
+    "name": "Somewhere She'd Like",
+    "season": 2,
+    "number": 3,
+    "type": "regular",
+    "airdate": "2026-01-30",
+    "airtime": "01:00",
+    "airstamp": "2026-01-30T16:00:00+00:00",
+    "runtime": 24
+  }
+]

@@ -12,6 +12,11 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <!-- Real TVmaze responses, captured from the public API. See TvMazeFixtures. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Fixtures\*.json" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit.v3" Version="3.1.0" />
@@ -23,11 +28,11 @@
     The plugin's own reference excludes runtime assets, because the host
     supplies the abstractions in production. The test host is not the
     host, so it has to bring its own copy or nothing that touches a
-    Shoko type will load. It comes from the same in-progress checkout as
-    the plugin, for the same reason (see the plugin's own csproj).
+    Shoko type will load - hence the same package, runtime assets and
+    all.
   -->
   <ItemGroup>
-    <ProjectReference Include="../../Shoko/Shoko.Abstractions/Shoko.Abstractions.csproj" />
+    <PackageReference Include="Shoko.Abstractions" Version="6.0.0-alpha.89" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,35 @@
+[
+  {
+    "id": 256125,
+    "name": "I'm Luffy! The Man Who Will Become the Pirate King!",
+    "season": 1999,
+    "number": 1,
+    "type": "regular",
+    "airdate": "1999-10-20",
+    "airtime": "14:30",
+    "airstamp": "1999-10-20T05:30:00+00:00",
+    "runtime": 25
+  },
+  {
+    "id": 256126,
+    "name": "The Great Swordsman Appears! Pirate Hunter Roronoa Zoro",
+    "season": 1999,
+    "number": 2,
+    "type": "regular",
+    "airdate": "1999-11-17",
+    "airtime": "14:30",
+    "airstamp": "1999-11-17T05:30:00+00:00",
+    "runtime": 25
+  },
+  {
+    "id": 256127,
+    "name": "Morgan versus Luffy! Who's the Mysterious Pretty Girl?",
+    "season": 1999,
+    "number": 3,
+    "type": "regular",
+    "airdate": "1999-11-24",
+    "airtime": "14:30",
+    "airstamp": "1999-11-24T05:30:00+00:00",
+    "runtime": 25
+  }
+]

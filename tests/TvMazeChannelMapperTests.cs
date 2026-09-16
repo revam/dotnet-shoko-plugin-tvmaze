@@ -111,4 +111,33 @@ public class TvMazeChannelMapperTests
 
         Assert.Empty(TvMazeChannelMapper.Resolve(show));
     }
+
+    [Fact]
+    public void The_captured_one_piece_show_resolves_its_real_broadcast_network()
+    {
+        // Straight from /lookup/shows?thetvdb=81797.
+        var show = TvMazeFixtures.Show("one-piece-show.json");
+
+        var channel = Assert.Single(TvMazeChannelMapper.Resolve(show));
+
+        Assert.Equal("Fuji TV (JP)", channel.Name);
+        Assert.Equal(AiringChannelType.Television, channel.Type);
+        Assert.Equal("JP", channel.CountryCode);
+        Assert.Equal("Asia/Tokyo", channel.TimeZoneId);
+    }
+
+    [Fact]
+    public void The_captured_streaming_only_show_resolves_a_countryless_web_channel()
+    {
+        // Netflix is worldwide, so TVmaze gives the web channel no country and
+        // the channel keeps its plain name.
+        var show = TvMazeFixtures.Show("edgerunners-show.json");
+
+        var channel = Assert.Single(TvMazeChannelMapper.Resolve(show));
+
+        Assert.Equal("Netflix", channel.Name);
+        Assert.Equal(AiringChannelType.Streaming, channel.Type);
+        Assert.Null(channel.CountryCode);
+        Assert.Null(channel.TimeZoneId);
+    }
 }

@@ -1,0 +1,47 @@
+{
+  "id": 1505,
+  "url": "https://www.tvmaze.com/shows/1505/one-piece",
+  "name": "One Piece",
+  "type": "Animation",
+  "language": "Japanese",
+  "genres": [
+    "Action",
+    "Adventure",
+    "Anime",
+    "Fantasy"
+  ],
+  "status": "Running",
+  "runtime": 25,
+  "averageRuntime": 26,
+  "premiered": "1999-10-20",
+  "ended": null,
+  "officialSite": "https://one-piece.com/anime/index.html",
+  "schedule": {
+    "time": "23:15",
+    "days": [
+      "Sunday"
+    ]
+  },
+  "rating": {
+    "average": 8.7
+  },
+  "weight": 99,
+  "network": {
+    "id": 131,
+    "name": "Fuji TV",
+    "country": {
+      "name": "Japan",
+      "code": "JP",
+      "timezone": "Asia/Tokyo"
+    },
+    "officialSite": null
+  },
+  "webChannel": null,
+  "dvdCountry": null,
+  "externals": {
+    "tvrage": 8205,
+    "thetvdb": 81797,
+    "imdb": "tt0388629"
+  },
+  "updated": 1789325505
+}

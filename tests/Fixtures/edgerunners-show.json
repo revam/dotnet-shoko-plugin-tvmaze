@@ -1,0 +1,40 @@
+{
+  "id": 48945,
+  "url": "https://www.tvmaze.com/shows/48945/cyberpunk-edgerunners",
+  "name": "Cyberpunk: Edgerunners",
+  "type": "Animation",
+  "language": "Japanese",
+  "genres": [
+    "Action",
+    "Anime",
+    "Science-Fiction"
+  ],
+  "status": "Ended",
+  "runtime": null,
+  "averageRuntime": 25,
+  "premiered": "2022-09-13",
+  "ended": "2026-10-20",
+  "officialSite": "https://www.netflix.com/title/81054853",
+  "schedule": {
+    "time": "",
+    "days": []
+  },
+  "rating": {
+    "average": 7.5
+  },
+  "weight": 99,
+  "network": null,
+  "webChannel": {
+    "id": 1,
+    "name": "Netflix",
+    "country": null,
+    "officialSite": "https://www.netflix.com/"
+  },
+  "dvdCountry": null,
+  "externals": {
+    "tvrage": null,
+    "thetvdb": 384541,
+    "imdb": "tt12590266"
+  },
+  "updated": 1789139704
+}

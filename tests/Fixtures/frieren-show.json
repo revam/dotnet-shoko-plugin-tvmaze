@@ -1,0 +1,44 @@
+{
+  "id": 69956,
+  "url": "https://www.tvmaze.com/shows/69956/frieren-beyond-journeys-end",
+  "name": "Frieren: Beyond Journey's End",
+  "type": "Animation",
+  "language": "Japanese",
+  "genres": [
+    "Anime"
+  ],
+  "status": "Running",
+  "runtime": 30,
+  "averageRuntime": 25,
+  "premiered": "2023-09-29",
+  "ended": null,
+  "officialSite": "https://frieren-anime.jp/",
+  "schedule": {
+    "time": "01:00",
+    "days": [
+      "Friday"
+    ]
+  },
+  "rating": {
+    "average": 7.7
+  },
+  "weight": 98,
+  "network": {
+    "id": 137,
+    "name": "NTV",
+    "country": {
+      "name": "Japan",
+      "code": "JP",
+      "timezone": "Asia/Tokyo"
+    },
+    "officialSite": null
+  },
+  "webChannel": null,
+  "dvdCountry": null,
+  "externals": {
+    "tvrage": null,
+    "thetvdb": 424536,
+    "imdb": "tt22248376"
+  },
+  "updated": 1787505980
+}

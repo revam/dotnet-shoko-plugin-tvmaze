@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Shoko.Abstractions.Config;
 using Shoko.Abstractions.Metadata.Services;
-using Shoko.Abstractions.Metadata.Tmdb;
 using Shoko.Plugin.TvMaze.Mapping;
 using Shoko.QueueProcessor.Abstractions;
 using Shoko.QueueProcessor.Acquisition.Attributes;
@@ -50,34 +48,49 @@ public class TvMazeSweepJob(
         var config = configurationProvider.Load();
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        var shows = metadataService.GetAllSeriesForProvider(IMetadataService.ProviderName.TMDB)
-            .OfType<ITmdbShow>()
-            .Where(show => TvMazeSweepPlanner.ShouldSweep(
-                hasTvdbShowId: show.TvdbShowID is not null,
-                endDate: show.EndDate?.ToDateOnly(),
-                stopSweepingEndedShowsAfterDays: config.StopSweepingEndedShowsAfterDays,
-                today: today
-            ))
-            .ToList();
+        var plan = TvMazeSweepPlanner.Plan(
+            metadataService.GetAllSeriesForProvider(IMetadataService.ProviderName.TMDB),
+            config.StopSweepingEndedShowsAfterDays,
+            today
+        );
 
-        logger.LogInformation("Sweeping {Count} TMDB show(s) for TVmaze airing schedules.", shows.Count);
+        // A sweep that looks at nothing is the same shape as a broken sweep,
+        // so say what was dropped and why rather than only how many are left.
+        logger.LogInformation(
+            "Sweeping {Count} of {Total} TMDB series for TVmaze airing schedules; left out {NotAShow} non-show series, {WithoutTvdbShowID} show(s) without a TheTVDB ID and {EndedTooLongAgo} show(s) that ended too long ago.",
+            plan.Shows.Count,
+            plan.TotalSeries,
+            plan.NotAShow,
+            plan.WithoutTvdbShowID,
+            plan.EndedTooLongAgo
+        );
+
+        if (plan.Shows.Count == 0)
+            return;
 
         var refreshed = 0;
         var failed = 0;
-        foreach (var show in shows)
+        foreach (var show in plan.Shows)
         {
             try
             {
                 if (await provider.RefreshAsync(show).ConfigureAwait(false))
                     refreshed++;
+                else
+                    logger.LogDebug("TVmaze had nothing to write for TMDB show {TmdbShowID} (\"{ShowTitle}\").", show.ID, show.Title);
             }
             catch (Exception ex)
             {
                 failed++;
-                logger.LogWarning(ex, "TVmaze sweep failed for TMDB show {TmdbShowId} ({ShowTitle}).", show.ID, show.Title);
+                logger.LogWarning(ex, "TVmaze sweep failed for TMDB show {TmdbShowID} (\"{ShowTitle}\").", show.ID, show.Title);
             }
         }
 
-        logger.LogInformation("TVmaze sweep complete: {Refreshed} refreshed, {Skipped} had nothing to do, {Failed} failed.", refreshed, shows.Count - refreshed - failed, failed);
+        logger.LogInformation(
+            "TVmaze sweep complete: {Refreshed} refreshed, {Skipped} had nothing to do, {Failed} failed.",
+            refreshed,
+            plan.Shows.Count - refreshed - failed,
+            failed
+        );
     }
 }

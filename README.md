@@ -11,6 +11,21 @@ existing links.
 
 ## How it works
 
+- **What a refresh accepts**: a refresh arrives for whatever entity it was
+  requested for, which for an ordinary series refresh is the *shoko series*,
+  not a TMDB show. So the provider resolves its own way to TMDB: a TMDB show
+  is used as-is, a shoko series resolves to every TMDB show it is linked to,
+  and any other series (an AniDB anime, an AniList anime) goes through its
+  shoko series to reach the same TMDB shows. Every dead end along the way is
+  logged at Debug — a refresh that silently does nothing is indistinguishable
+  from a broken provider.
+- **Several linked shows**: one anime can be linked to several TMDB shows (a
+  split-cour run is usually one TMDB show per cour), and all of them are
+  refreshed, not just the first. They are grouped by `TvdbShowID` first, so
+  two TMDB shows keyed to the same TheTVDB show cost one lookup and one
+  episode list between them, and each still gets its own schedules written
+  against its own seasons and episodes. The refresh counts as work done when
+  any one of them produced a schedule.
 - **Keying**: TVmaze has no AniDB or TMDB IDs of its own. Instead, a TMDB
   show's `TvdbShowID` is looked up against
   `GET https://api.tvmaze.com/lookup/shows?thetvdb={id}`, which redirects
@@ -18,7 +33,12 @@ existing links.
   show with no `TvdbShowID` at all is skipped outright: this provider simply
   has nothing to key it on.
 - **Episodes**: `GET /shows/{id}/episodes` returns the full episode list, each
-  carrying a precise UTC `airstamp`. TVmaze's season and episode numbers are
+  carrying a precise `airstamp` (an ISO timestamp with an offset), which is
+  the only time field used. The sibling `airdate`/`airtime` pair is the
+  *broadcast day* and local clock time, and for a late-night slot the two
+  disagree by a day — Frieren's 01:00 JST slot is listed under the previous
+  day's `airdate` — so times are taken from the `airstamp` and submitted to
+  Shoko in UTC. TVmaze's season and episode numbers are
   matched against the TMDB season with the same season number, and against
   that season's episodes by episode number. An episode that cannot be matched
   this way — because TVmaze and TMDB disagree on the numbering, most often —
@@ -85,6 +105,11 @@ while building this plugin):
   updated or removed.
 - **Only `Original`.** No dub or subtitle distinction is made; see "How it
   works" above.
+- **Season numbering has to agree with TMDB.** A long-running show that
+  TVmaze numbers by broadcast year instead of by season — One Piece's TVmaze
+  seasons run `1999`, `2000`, … — lines up with no TMDB season, so nothing is
+  written for it. The mismatch is logged per season at Debug rather than
+  guessed at.
 
 ## Configuration
 
