@@ -131,7 +131,7 @@ How often the sweep runs is the server's setting rather than the plugin's: the p
 1. Open the Shoko Web UI and navigate to **Settings → Plugins → Repositories**.
 2. Add the manifest URL:
    ```
-   https://raw.githubusercontent.com/revam/dotnet-shoko-plugin-tvmaze/stable/manifest.json
+   https://raw.githubusercontent.com/revam/dotnet-shoko-plugin-tvmaze/metadata/manifest.json
    ```
 3. Go to **Settings → Plugins → Browse** and find **TVmaze Airing Schedule**.
 4. Click **Install** on the desired version.
