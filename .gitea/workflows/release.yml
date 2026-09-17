@@ -33,8 +33,8 @@ env:
 jobs:
   build:
     # Pinned. `ubuntu-latest` is a moving pointer, and 24.04 is the image
-    # that carries node24 - which the action pins below need, node20
-    # being end of life - along with zip, jq and curl.
+    # that carries node24 - which the action pins below need, node20 being
+    # end of life - along with jq and curl.
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -51,7 +51,7 @@ jobs:
 
       - name: Check the toolchain
         run: |
-          for tool in dotnet zip jq curl git; do
+          for tool in dotnet jq curl git; do
             command -v "$tool" >/dev/null 2>&1 || {
               echo "runner image is missing: ${tool}" >&2
               exit 1
@@ -69,77 +69,62 @@ jobs:
           git fetch --no-tags origin "+refs/heads/${METADATA_BRANCH}:refs/remotes/origin/${METADATA_BRANCH}"
           git show "origin/${METADATA_BRANCH}:${MANIFEST_PATH}" > "${RUNNER_TEMP}/manifest.json"
 
-      - name: Build
-        run: dotnet build Shoko.Plugin.TvMaze.slnx --configuration Release
-
-      - name: Package
-        run: |
-          ZIP_NAME="Shoko.Plugin.TvMaze-${{ github.event.release.tag_name }}-any.zip"
-          cd source/bin/Release/net10.0
-          zip "../../../../${ZIP_NAME}" Shoko.Plugin.TvMaze.dll
-          cd ../../../..
-          echo "ZIP_NAME=${ZIP_NAME}" >> "$GITHUB_ENV"
-
-      - name: Upload to Release
+      - name: Read the release notes
         env:
           # Gitea has no GITHUB_TOKEN. The automatic token is GITEA_TOKEN,
           # and it can write a release even though it cannot write a
           # package registry.
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
         run: |
-          scripts/gitea-release-asset.sh \
-            --tag "${{ github.event.release.tag_name }}" \
-            "${ZIP_NAME}"
+          # Gitea's release event payload is not GitHub's, so the body is
+          # read back from the API rather than trusted from the event.
+          # The file is always written, empty if there is no body: a
+          # --release-notes-path it cannot read stops shoko-build, while
+          # an empty one just leaves the notes off the release entry.
+          curl --silent --show-error --fail \
+            --header "Authorization: token ${GITEA_TOKEN}" \
+            --header "Accept: application/json" \
+            "${GITHUB_SERVER_URL%/}/api/v1/repos/${GITHUB_REPOSITORY}/releases/tags/${{ github.event.release.tag_name }}" \
+            | jq -r '.body // empty' > "${RUNNER_TEMP}/release-notes.md"
 
-      - name: Update Manifest
+      # Pinned in .config/dotnet-tools.json, so the packaging of a release
+      # is reproducible instead of depending on whichever shoko-build is
+      # latest on the day it is cut.
+      - name: Restore the build tool
+        run: dotnet tool restore
+
+      # shoko-build discovers the plugin tags from the source, builds the
+      # project, packs the whole output directory (dependencies and the
+      # .deps.json included, not just the plugin assembly), checksums the
+      # archive and writes the release entry into the manifest with the
+      # abstraction version the assembly was actually compiled against. It
+      # reads the project from the working directory, hence `source`, and
+      # rewrites the manifest fetched from the metadata branch rather than
+      # the copy on `stable` in the work tree.
+      - name: Build and package
+        working-directory: source
+        run: |
+          dotnet shoko-build \
+            --configuration Release \
+            --channel Stable \
+            --tag "${{ github.event.release.tag_name }}" \
+            --release-notes-path "${RUNNER_TEMP}/release-notes.md" \
+            --manifest "${RUNNER_TEMP}/manifest.json" \
+            --output "${GITHUB_WORKSPACE}/dist/{name}-{tag}-{runtime}.zip" \
+            --url "${ASSET_BASE_URL}/{tag}/{name}-{tag}-{runtime}.zip"
+
+      # A glob rather than a name, so an archive per runtime identifier
+      # uploads without touching this step.
+      - name: Upload to Release
         env:
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
         run: |
-          TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#v}"
-          SOURCE_REVISION=$(git rev-parse HEAD)
-          # Gitea's release event payload is not GitHub's, so the publish
-          # time is read back from the API rather than trusted from the
-          # event. A payload carrying neither timestamp falls back to
-          # now; an API call that fails stops the step.
-          RELEASED_AT=$(curl --silent --show-error --fail \
-            --header "Authorization: token ${GITEA_TOKEN}" \
-            --header "Accept: application/json" \
-            "${GITHUB_SERVER_URL%/}/api/v1/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" \
-            | jq -r '.published_at // .created_at // empty')
-          RELEASED_AT="${RELEASED_AT:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
-          CHECKSUM=$(sha256sum "${ZIP_NAME}" | awk '{ print $1 }')
-          URL="${ASSET_BASE_URL}/${TAG}/${ZIP_NAME}"
+          scripts/gitea-release-asset.sh \
+            --tag "${{ github.event.release.tag_name }}" \
+            dist/*.zip
 
-          RELEASE_ENTRY=$(jq -n \
-            --arg version "$VERSION" \
-            --arg tag "$TAG" \
-            --arg source_revision "$SOURCE_REVISION" \
-            --arg released_at "$RELEASED_AT" \
-            --arg url "$URL" \
-            --arg checksum "$CHECKSUM" \
-            '{
-              version: $version,
-              tag: $tag,
-              source_revision: $source_revision,
-              released_at: $released_at,
-              channel: "Stable",
-              release_notes: null,
-              archives: [
-                {
-                  runtime: "any",
-                  abstraction: "6.0.0",
-                  url: $url,
-                  checksum: $checksum
-                }
-              ]
-            }')
-
-          jq --argjson release "$RELEASE_ENTRY" '
-            .releases |= [ $release ] + (. | map(select(.version != $release.version)))
-          ' "${RUNNER_TEMP}/manifest.json" > "${RUNNER_TEMP}/manifest.next.json"
-          mv "${RUNNER_TEMP}/manifest.next.json" "${RUNNER_TEMP}/manifest.json"
-
+      - name: Update Manifest
+        run: |
           # The work tree has to be clean to switch branches, and the
           # manifest travels in RUNNER_TEMP rather than in a stash: a
           # stash of a path that already exists on the metadata branch
@@ -152,5 +137,5 @@ jobs:
           git add "${MANIFEST_PATH}"
           # The only commit and the only push, and it is not on a source
           # branch, so `stable` stays byte-identical on both remotes.
-          git commit -m "ci: update manifest for ${TAG}"
+          git commit -m "ci: update manifest for ${{ github.event.release.tag_name }}"
           git push origin "${METADATA_BRANCH}"
