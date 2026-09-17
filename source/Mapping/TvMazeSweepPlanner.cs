@@ -6,10 +6,9 @@ using Shoko.Abstractions.Metadata.Tmdb;
 namespace Shoko.Plugin.TvMaze.Mapping;
 
 /// <summary>
-/// Decides which TMDB shows are worth spending a TVmaze request on during the
-/// provider's daily sweep (<see cref="Jobs.TvMazeSweepJob"/>). Kept separate
-/// from the job so the "should we bother" decision can be unit tested without
-/// standing up the metadata service.
+/// Decides which TMDB shows are worth spending a TVmaze request on during a
+/// sweep. Kept separate from the provider so the "should we bother" decision
+/// can be unit tested without standing up the metadata service.
 /// </summary>
 public static class TvMazeSweepPlanner
 {

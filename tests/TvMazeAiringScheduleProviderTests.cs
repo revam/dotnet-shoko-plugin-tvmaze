@@ -279,7 +279,13 @@ public class TvMazeAiringScheduleProviderTests
     #region Helpers
 
     private static TvMazeAiringScheduleProvider Provider(StubTvMazeApi api, RecordingScheduleService service)
-        => new(api.Client, service.Object, NullLogger<TvMazeAiringScheduleProvider>.Instance);
+        => new(
+            api.Client,
+            service.Object,
+            TvMazeHost.MetadataService(),
+            TvMazeHost.ConfigurationProvider(),
+            NullLogger<TvMazeAiringScheduleProvider>.Instance
+        );
 
     private static ITmdbEpisode TmdbEpisode(int number)
     {
@@ -298,15 +304,7 @@ public class TvMazeAiringScheduleProviderTests
     }
 
     private static ITmdbShow TmdbShow(int id, int? tvdbShowId, params ITmdbSeason[] seasons)
-    {
-        var show = new Mock<ITmdbShow>();
-        show.Setup(s => s.ID).Returns(id);
-        show.Setup(s => s.Title).Returns($"TMDB show {id}");
-        show.Setup(s => s.TvdbShowID).Returns(tvdbShowId);
-        show.Setup(s => s.OriginalLanguageCode).Returns("ja");
-        show.Setup(s => s.Seasons).Returns(seasons);
-        return show.Object;
-    }
+        => TvMazeHost.TmdbShow(id, tvdbShowId, endDate: null, seasons);
 
     private static IShokoSeries ShokoSeries(int id, params ITmdbShow[] shows)
     {
@@ -315,63 +313,6 @@ public class TvMazeAiringScheduleProviderTests
         series.Setup(s => s.Title).Returns($"Shoko series {id}");
         series.Setup(s => s.TmdbShows).Returns(shows);
         return series.Object;
-    }
-
-    /// <summary>
-    /// An <see cref="IAiringScheduleService"/> that records what the provider
-    /// pushed into it, in the order it arrived.
-    /// </summary>
-    private sealed class RecordingScheduleService
-    {
-        private readonly Dictionary<IAiringSchedule, AiringScheduleData> _byHandle = [];
-
-        public IAiringScheduleService Object { get; }
-
-        public List<(string Name, AiringChannelType Type)> RegisteredChannels { get; } = [];
-
-        public Dictionary<string, Guid> ChannelIDs { get; } = [];
-
-        public List<AiringScheduleData> Schedules { get; } = [];
-
-        public List<(AiringScheduleData Schedule, IReadOnlyList<EpisodeAiringData> Airings)> WrittenAirings { get; } = [];
-
-        public RecordingScheduleService()
-        {
-            var mock = new Mock<IAiringScheduleService>();
-            mock.Setup(service => service.FindOrRegisterChannel(It.IsAny<string>(), It.IsAny<AiringChannelType>()))
-                .Returns((string name, AiringChannelType type) =>
-                {
-                    RegisteredChannels.Add((name, type));
-                    if (!ChannelIDs.TryGetValue(name, out var channelId))
-                        ChannelIDs[name] = channelId = Guid.NewGuid();
-
-                    var channel = new Mock<IAiringChannel>();
-                    channel.Setup(c => c.ID).Returns(channelId);
-                    channel.Setup(c => c.Name).Returns(name);
-                    channel.Setup(c => c.Type).Returns(type);
-                    return channel.Object;
-                });
-            mock.Setup(service => service.AddOrUpdateSchedule(It.IsAny<IAiringScheduleProvider>(), It.IsAny<AiringScheduleData>()))
-                .Returns((IAiringScheduleProvider _, AiringScheduleData data) =>
-                {
-                    var schedule = new Mock<IAiringSchedule>().Object;
-                    Schedules.Add(data);
-                    _byHandle[schedule] = data;
-                    return schedule;
-                });
-            mock.Setup(service => service.SetAirings(
-                    It.IsAny<IAiringScheduleProvider>(),
-                    It.IsAny<IAiringSchedule>(),
-                    It.IsAny<IEnumerable<EpisodeAiringData>>(),
-                    It.IsAny<EpisodeAiringUpdateOptions?>()
-                ))
-                .Returns((IAiringScheduleProvider _, IAiringSchedule schedule, IEnumerable<EpisodeAiringData> airings, EpisodeAiringUpdateOptions? _) =>
-                {
-                    WrittenAirings.Add((_byHandle[schedule], airings.ToList()));
-                    return [];
-                });
-            Object = mock.Object;
-        }
     }
 
     #endregion

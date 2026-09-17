@@ -60,13 +60,18 @@ existing links.
   per season, so whether a given season's schedule is "finished" is inferred:
   every season below the show's latest is necessarily done, and the latest
   one is left open only while the show's own status is `"Running"`.
-- **The provider's own cadence**: core only ever asks a provider to refresh a
-  specific series on request (a user click, a newly linked show). Nothing
-  walks every provider for every series on a schedule — that's each
-  provider's own job, the same way a Syoboi or AnimeSchedule.net provider
-  would own theirs. `TvMazeSweepJob` is a recurring job (daily by default,
-  see **Configuration**) that finds every TMDB show plausibly keyed to
-  TVmaze and refreshes each one in turn.
+- **Sweeps**: `RefreshAsync` answers one series because something asked for
+  it (a user click, a newly linked show); walking every TMDB show plausibly
+  keyed to TVmaze is the other half, and the provider opts into having the
+  server do the driving by implementing `ISweepingAiringScheduleProvider`.
+  The server decides when a sweep is due (this provider suggests daily) and
+  how long one chunk may run; `SweepAsync` refreshes shows in ID order, stops
+  as soon as its deadline fires, and hands back the TMDB show ID it got to as
+  the cursor the next chunk resumes after.
+- **Whole-line writes**: one request hands back a show's entire episode list,
+  so a season's schedule is submitted through `SetAirings`, which reads a
+  submission as that schedule's whole line and works out delays, pre-emptions
+  and hiatuses across it.
 
 ## Rate limits and licensing
 
@@ -115,8 +120,9 @@ while building this plugin):
 
 | Setting | Default | Description |
 |---|---|---|
-| **Sweep Interval** | `1.00:00:00` (24 hours) | How often the provider's own sweep job runs. Changing this requires a Shoko restart, since the interval is only read when the job is registered at startup. |
 | **Stop Sweeping Ended Shows After (days)** | `60` | How many days past a show's known end date the sweep keeps refreshing it, in case TVmaze corrects an air date after the fact. `0` sweeps ended shows forever. |
+
+How often the sweep runs is the server's setting rather than the plugin's: the provider suggests once a day, and the interval actually used lives on the provider's own page in the Shoko UI, where anything under fifteen minutes is clamped.
 
 ## Installation
 

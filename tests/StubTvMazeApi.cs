@@ -35,9 +35,14 @@ public sealed class StubTvMazeApi : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="StubTvMazeApi"/> class.
     /// </summary>
-    public StubTvMazeApi()
+    /// <param name="abortWhen">
+    /// Optional. Called with each relative URI and everything requested so
+    /// far; answering <c>true</c> aborts that request, the way a sweep's
+    /// deadline aborts the request in flight.
+    /// </param>
+    public StubTvMazeApi(Func<string, IReadOnlyList<string>, bool>? abortWhen = null)
     {
-        _handler = new StubHandler(_responses);
+        _handler = new StubHandler(_responses, abortWhen);
         _http = new HttpClient(_handler) { BaseAddress = new Uri("https://api.tvmaze.com/") };
         _rateLimiter = new TvMazeRateLimiter();
         Client = new TvMazeClient(_http, _rateLimiter, NullLogger<TvMazeClient>.Instance);
@@ -75,17 +80,22 @@ public sealed class StubTvMazeApi : IDisposable
         _rateLimiter.Dispose();
     }
 
-    private sealed class StubHandler(IReadOnlyDictionary<string, string> responses) : HttpMessageHandler
+    private sealed class StubHandler(IReadOnlyDictionary<string, string> responses, Func<string, IReadOnlyList<string>, bool>? abortWhen) : HttpMessageHandler
     {
         private readonly List<string> _requests = [];
 
         public IReadOnlyList<string> Requests => _requests;
 
+        /// <inheritdoc/>
+        /// <exception cref="OperationCanceledException">The request was aborted.</exception>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var path = request.RequestUri!.PathAndQuery;
             lock (_requests)
                 _requests.Add(path);
+
+            if (abortWhen is not null && abortWhen(path, _requests))
+                throw new OperationCanceledException(cancellationToken);
 
             if (!responses.TryGetValue(path, out var body))
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound) { RequestMessage = request });

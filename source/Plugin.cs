@@ -2,13 +2,9 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Shoko.Abstractions.Config;
 using Shoko.Abstractions.Plugin;
 using Shoko.Plugin.TvMaze.Client;
-using Shoko.Plugin.TvMaze.Jobs;
-using Shoko.QueueProcessor.Scheduling;
 
 namespace Shoko.Plugin.TvMaze;
 
@@ -17,7 +13,7 @@ namespace Shoko.Plugin.TvMaze;
 /// and streaming airing times for TMDB-linked shows from
 /// <see href="https://www.tvmaze.com"/>, keyed through a show's TheTVDB ID.
 /// </summary>
-public class Plugin : IPlugin, IPluginServiceRegistration, IPluginApplicationRegistration
+public class Plugin : IPlugin, IPluginServiceRegistration
 {
     /// <inheritdoc/>
     public Guid ID { get; private init; } = new("5c09a10b-b36f-4a04-93db-6b085a0aafc2");
@@ -34,8 +30,10 @@ public class Plugin : IPlugin, IPluginServiceRegistration, IPluginApplicationReg
     /// <inheritdoc/>
     public static void RegisterServices(IServiceCollection serviceCollection, IApplicationPaths applicationPaths)
     {
+        // The provider itself is not registered: the server finds it by
+        // reflection, constructs it with these services, and sweeps that very
+        // instance, so nothing here needs a reference to it.
         serviceCollection.AddSingleton<TvMazeRateLimiter>();
-        serviceCollection.AddSingleton<TvMazeAiringScheduleProvider>();
 
         serviceCollection
             .AddHttpClient<TvMazeClient>(client =>
@@ -56,15 +54,5 @@ public class Plugin : IPlugin, IPluginServiceRegistration, IPluginApplicationReg
                 handler.PooledConnectionLifetime = TimeSpan.FromMinutes(5);
                 handler.PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2);
             });
-    }
-
-    /// <inheritdoc/>
-    public static void RegisterServices(IApplicationBuilder application, IApplicationPaths applicationPaths)
-    {
-        var configurationProvider = application.ApplicationServices.GetRequiredService<ConfigurationProvider<TvMazeConfiguration>>();
-        var sweepInterval = configurationProvider.Load().SweepInterval;
-
-        var registry = application.ApplicationServices.GetRequiredService<RecurringJobRegistry>();
-        registry.Register<TvMazeSweepJob>(interval: sweepInterval, runImmediately: false);
     }
 }

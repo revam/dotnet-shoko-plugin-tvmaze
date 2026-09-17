@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 using Shoko.Abstractions.Config;
 using Shoko.Abstractions.Metadata;
 using Shoko.Abstractions.Metadata.Airing;
@@ -38,11 +39,14 @@ namespace Shoko.Plugin.TvMaze;
 /// every track this provider writes is Original.
 /// </para>
 /// </remarks>
-public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMazeConfiguration>
+public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMazeConfiguration>, ISweepingAiringScheduleProvider
 {
     private readonly TvMazeClient _client;
     private readonly IAiringScheduleService _airingScheduleService;
+    private readonly IMetadataService _metadataService;
+    private readonly ConfigurationProvider<TvMazeConfiguration> _configurationProvider;
     private readonly ILogger<TvMazeAiringScheduleProvider> _logger;
+    private readonly TimeProvider _timeProvider;
 
     /// <inheritdoc/>
     public string Name => "TVmaze";
@@ -58,13 +62,154 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
     /// </summary>
     /// <param name="client">The TVmaze API client.</param>
     /// <param name="airingScheduleService">The airing schedule service.</param>
+    /// <param name="metadataService">The metadata service, used to walk every TMDB show during a sweep.</param>
+    /// <param name="configurationProvider">The configuration provider.</param>
     /// <param name="logger">Logger for diagnostic output.</param>
-    public TvMazeAiringScheduleProvider(TvMazeClient client, IAiringScheduleService airingScheduleService, ILogger<TvMazeAiringScheduleProvider> logger)
+    /// <param name="timeProvider">Optional. The time provider to use. Defaults to <see cref="TimeProvider.System"/>.</param>
+    public TvMazeAiringScheduleProvider(
+        TvMazeClient client,
+        IAiringScheduleService airingScheduleService,
+        IMetadataService metadataService,
+        ConfigurationProvider<TvMazeConfiguration> configurationProvider,
+        ILogger<TvMazeAiringScheduleProvider> logger,
+        TimeProvider? timeProvider = null
+    )
     {
         _client = client;
         _airingScheduleService = airingScheduleService;
+        _metadataService = metadataService;
+        _configurationProvider = configurationProvider;
         _logger = logger;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
+
+    #region Sweeping
+
+    /// <summary>
+    /// TVmaze is a volunteer-maintained guide that fills a season in ahead of
+    /// broadcast and corrects the odd slot afterwards, so walking every show
+    /// once a day keeps up with it. The value actually used is the user's own
+    /// <c>AiringScheduleProviderInfo.SweepInterval</c>, which this only seeds,
+    /// and the server never sweeps more often than every fifteen minutes.
+    /// </summary>
+    public TimeSpan? SuggestedSweepInterval => TimeSpan.FromHours(24);
+
+    /// <inheritdoc/>
+    public async Task<string?> SweepAsync(string? cursor, CancellationToken cancellationToken)
+    {
+        var after = ParseCursor(cursor);
+        var config = _configurationProvider.Load();
+        var today = DateOnly.FromDateTime(_timeProvider.GetUtcNow().UtcDateTime);
+        var plan = TvMazeSweepPlanner.Plan(
+            _metadataService.GetAllSeriesForProvider(IMetadataService.ProviderName.TMDB),
+            config.StopSweepingEndedShowsAfterDays,
+            today
+        );
+
+        // A sweep that looks at nothing is the same shape as a broken sweep,
+        // so say what was dropped and why rather than only how many are left.
+        _logger.LogDebug(
+            "Sweeping {Count} of {Total} TMDB series for TVmaze airing schedules; left out {NotAShow} non-show series, "
+            + "{WithoutTvdbShowID} show(s) without a TheTVDB ID and {EndedTooLongAgo} show(s) that ended too long ago.",
+            plan.Shows.Count,
+            plan.TotalSeries,
+            plan.NotAShow,
+            plan.WithoutTvdbShowID,
+            plan.EndedTooLongAgo
+        );
+
+        var shows = plan.Shows
+            .Where(show => show.ID > after)
+            .OrderBy(show => show.ID)
+            .ToList();
+        if (shows.Count == 0)
+        {
+            _logger.LogDebug("The sweep found no shows after TMDB show {TmdbShowID}, and has come full circle.", after);
+            return null;
+        }
+
+        var refreshed = 0;
+        var failed = 0;
+        var swept = 0;
+        foreach (var show in shows)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                return ResumeAfter(after, swept);
+
+            try
+            {
+                if (await RefreshAsync(show, cancellationToken).ConfigureAwait(false))
+                    refreshed++;
+                else
+                    _logger.LogDebug("TVmaze had nothing to write for TMDB show {TmdbShowID} (\"{ShowTitle}\").", show.ID, show.Title);
+            }
+            catch (OperationCanceledException)
+            {
+                // The budget ran out mid-request. Handing back the ground
+                // already covered beats letting the chunk end as a timeout,
+                // which would walk these shows again from the old cursor.
+                return ResumeAfter(after, swept);
+            }
+            catch (Exception ex)
+            {
+                // One show TVmaze answers oddly for is not worth stalling the
+                // walk over; the cursor moves past it either way.
+                failed++;
+                _logger.LogWarning(ex, "The TVmaze sweep failed for TMDB show {TmdbShowID} (\"{ShowTitle}\").", show.ID, show.Title);
+            }
+
+            after = show.ID;
+            swept++;
+        }
+
+        _logger.LogDebug(
+            "The sweep covered the last {Count} show(s) and has come full circle: {Refreshed} refreshed, {Skipped} had nothing to do, {Failed} failed.",
+            swept,
+            refreshed,
+            swept - refreshed - failed,
+            failed
+        );
+        return null;
+
+        string ResumeAfter(int tmdbShowId, int count)
+        {
+            _logger.LogDebug(
+                "The sweep covered {Count} show(s) before running out of budget; the next chunk resumes after TMDB show {TmdbShowID}.",
+                count,
+                tmdbShowId
+            );
+            return FormatCursor(tmdbShowId);
+        }
+    }
+
+    /// <summary>
+    /// Reads the TMDB show ID the last chunk finished at out of the cursor. A
+    /// cursor that cannot be read starts the sweep over rather than ending it,
+    /// since an unreadable cursor says nothing about what has been covered.
+    /// </summary>
+    /// <param name="cursor">The cursor the chunk was called with.</param>
+    /// <returns>The TMDB show ID to resume after; <c>0</c> starts a fresh sweep.</returns>
+    private int ParseCursor(string? cursor)
+    {
+        if (string.IsNullOrEmpty(cursor))
+            return 0;
+
+        if (int.TryParse(cursor, NumberStyles.None, CultureInfo.InvariantCulture, out var tmdbShowId))
+            return tmdbShowId;
+
+        _logger.LogWarning("Starting a fresh sweep: the cursor \"{Cursor}\" is not a TMDB show ID.", cursor);
+        return 0;
+    }
+
+    /// <summary>
+    /// Writes the TMDB show ID to resume after as a cursor.
+    /// </summary>
+    /// <param name="tmdbShowId">The TMDB show ID the chunk finished at.</param>
+    /// <returns>The cursor.</returns>
+    private static string FormatCursor(int tmdbShowId)
+        => tmdbShowId.ToString(CultureInfo.InvariantCulture);
+
+    #endregion
 
     #region Refreshing
 
