@@ -6,7 +6,6 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Title>Shoko TVmaze Airing Schedule</Title>
         <Authors>revam</Authors>
-        <RepositoryUrl>https://github.com/revam/dotnet-shoko-plugin-tvmaze</RepositoryUrl>
         <Version>1.0.0</Version>
         <Configurations>Debug;Release</Configurations>
         <Platforms>AnyCPU;x64</Platforms>
