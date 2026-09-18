@@ -1,17 +1,35 @@
 {
   "$schema": "https://raw.githubusercontent.com/ShokoAnime/ShokoServer/master/Shoko.BuildTools/manifest.schema.json",
-  "id": "5c09a10b-b36f-4a04-93db-6b085a0aafc2",
   "type": "package",
+  "id": "5c09a10b-b36f-4a04-93db-6b085a0aafc2",
   "name": "TVmaze Airing Schedule",
   "overview": "Fills in broadcast and streaming airing schedules for TMDB-linked shows from TVmaze, keyed through the TVDB ID.",
   "authors": "revam",
   "repository_url": "https://github.com/revam/dotnet-shoko-plugin-tvmaze",
   "tags": [
+    "service-registration",
     "airing",
     "schedule",
     "tvmaze",
     "tmdb",
     "calendar"
   ],
-  "releases": []
+  "releases": [
+    {
+      "version": "1.0.0",
+      "tag": "v1.0.0",
+      "released_at": "2026-09-18T04:19:16.7896563Z",
+      "channel": "Stable",
+      "release_notes": "First release.\n\nFills in broadcast and streaming airing schedules for TMDB-linked shows from [TVmaze](https://www.tvmaze.com), keyed through the TVDB ID. One schedule per season and channel, submitted as a whole line.\n\nRequires Shoko Server with abstractions \u00606.0.0-alpha.89\u0060.",
+      "dependencies": [],
+      "archives": [
+        {
+          "runtime": "any",
+          "abstraction": "6.0.0",
+          "url": "https://github.com/revam/dotnet-shoko-plugin-tvmaze/releases/download/v1.0.0/TVmazeAiringSchedule-v1.0.0-any.zip",
+          "checksum": "sha256:28aaaf8e510eab9ef7ebd6ea8d3fe5db05fd3ebdbe673183171d197b3514a8c0"
+        }
+      ]
+    }
+  ]
 }
