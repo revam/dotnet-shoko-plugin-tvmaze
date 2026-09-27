@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -144,7 +145,8 @@ public class TvMazeAiringScheduleProviderTests
         var service = new RecordingScheduleService();
         var show = TmdbShow(id: 209867, tvdbShowId: FrierenTvdbShowID, TmdbSeason(seasonNumber: 1, id: "1", episodeCount: 28));
         var anidbAnime = new Mock<ISeries>();
-        anidbAnime.Setup(s => s.Source).Returns(Shoko.Abstractions.Metadata.Enums.DataSource.AniDB);
+        anidbAnime.Setup(s => s.ID).Returns(new MetadataGuid(MetadataSource.AniDB, MetadataEntityType.Series, "17617"));
+        anidbAnime.Setup(s => s.Source).Returns(MetadataSource.AniDB);
         anidbAnime.Setup(s => s.ShokoSeries).Returns([ShokoSeries(id: 42, show)]);
 
         Assert.True(await Provider(api, service).RefreshAsync(anidbAnime.Object, TestContext.Current.CancellationToken));
@@ -297,7 +299,7 @@ public class TvMazeAiringScheduleProviderTests
     private static ITmdbSeason TmdbSeason(int seasonNumber, string id, int episodeCount)
     {
         var season = new Mock<ITmdbSeason>();
-        season.Setup(s => s.ID).Returns(id);
+        season.Setup(s => s.ID).Returns(new MetadataGuid(MetadataSource.TMDB, MetadataEntityType.Season, id));
         season.Setup(s => s.SeasonNumber).Returns(seasonNumber);
         season.Setup(s => s.Episodes).Returns(Enumerable.Range(1, episodeCount).Select(TmdbEpisode).ToList());
         return season.Object;
@@ -309,7 +311,8 @@ public class TvMazeAiringScheduleProviderTests
     private static IShokoSeries ShokoSeries(int id, params ITmdbShow[] shows)
     {
         var series = new Mock<IShokoSeries>();
-        series.Setup(s => s.ID).Returns(id);
+        series.Setup(s => s.ID).Returns(new MetadataGuid(MetadataSource.Shoko, MetadataEntityType.Series, id.ToString(CultureInfo.InvariantCulture)));
+        series.Setup(s => s.LocalID).Returns(id);
         series.Setup(s => s.Title).Returns($"Shoko series {id}");
         series.Setup(s => s.TmdbShows).Returns(shows);
         return series.Object;

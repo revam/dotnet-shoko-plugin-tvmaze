@@ -101,7 +101,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
         var config = _configurationProvider.Load();
         var today = DateOnly.FromDateTime(_timeProvider.GetUtcNow().UtcDateTime);
         var plan = TvMazeSweepPlanner.Plan(
-            _metadataService.GetAllSeriesForProvider(IMetadataService.ProviderName.TMDB),
+            _metadataService.GetAllSeriesForSource(MetadataSource.TMDB),
             config.StopSweepingEndedShowsAfterDays,
             today
         );
@@ -119,8 +119,8 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
         );
 
         var shows = plan.Shows
-            .Where(show => show.ID > after)
-            .OrderBy(show => show.ID)
+            .Where(show => show.TmdbID > after)
+            .OrderBy(show => show.TmdbID)
             .ToList();
         if (shows.Count == 0)
         {
@@ -141,7 +141,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                 if (await RefreshAsync(show, cancellationToken).ConfigureAwait(false))
                     refreshed++;
                 else
-                    _logger.LogDebug("TVmaze had nothing to write for TMDB show {TmdbShowID} (\"{ShowTitle}\").", show.ID, show.Title);
+                    _logger.LogDebug("TVmaze had nothing to write for TMDB show {TmdbShowID} (\"{ShowTitle}\").", show.TmdbID, show.Title);
             }
             catch (OperationCanceledException)
             {
@@ -155,10 +155,10 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                 // One show TVmaze answers oddly for is not worth stalling the
                 // walk over; the cursor moves past it either way.
                 failed++;
-                _logger.LogWarning(ex, "The TVmaze sweep failed for TMDB show {TmdbShowID} (\"{ShowTitle}\").", show.ID, show.Title);
+                _logger.LogWarning(ex, "The TVmaze sweep failed for TMDB show {TmdbShowID} (\"{ShowTitle}\").", show.TmdbID, show.Title);
             }
 
-            after = show.ID;
+            after = show.TmdbID;
             swept++;
         }
 
@@ -265,16 +265,16 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                 if (shows.Count == 0)
                     _logger.LogDebug(
                         "Skipping shoko series {ShokoSeriesID} (\"{SeriesTitle}\"): it has no linked TMDB shows to key TVmaze through.",
-                        shokoSeries.ID,
+                        shokoSeries.LocalID,
                         shokoSeries.Title
                     );
                 else
                     _logger.LogDebug(
                         "Shoko series {ShokoSeriesID} (\"{SeriesTitle}\") resolved to {Count} linked TMDB show(s): {TmdbShowIDs}.",
-                        shokoSeries.ID,
+                        shokoSeries.LocalID,
                         shokoSeries.Title,
                         shows.Count,
-                        string.Join(", ", shows.Select(show => show.ID))
+                        string.Join(", ", shows.Select(show => show.TmdbID))
                     );
                 return shows;
             }
@@ -297,14 +297,14 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                         series.ID,
                         series.Title,
                         shows.Count,
-                        string.Join(", ", shows.Select(show => show.ID))
+                        string.Join(", ", shows.Select(show => show.TmdbID))
                     );
                 return shows;
             }
         }
 
         static IReadOnlyList<ITmdbShow> Distinct(IEnumerable<ITmdbShow> shows)
-            => shows.DistinctBy(show => show.ID).ToList();
+            => shows.DistinctBy(show => show.TmdbID).ToList();
     }
 
     /// <summary>
@@ -326,7 +326,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
             {
                 _logger.LogDebug(
                     "Skipping TMDB show {TmdbShowID} (\"{ShowTitle}\"): it has no TheTVDB ID, which is the only key TVmaze can be looked up by.",
-                    show.ID,
+                    show.TmdbID,
                     show.Title
                 );
                 continue;
@@ -367,7 +367,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
             _logger.LogDebug(
                 "TVmaze has no show for TheTVDB ID {TvdbShowID} (TMDB show(s) {TmdbShowIDs}).",
                 tvdbShowId,
-                string.Join(", ", shows.Select(show => show.ID))
+                string.Join(", ", shows.Select(show => show.TmdbID))
             );
             return false;
         }
@@ -385,7 +385,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                 "TVmaze show {TvMazeShowID} has no numbered episodes among its {EpisodeCount} episode(s), for TMDB show(s) {TmdbShowIDs}.",
                 tvMazeShow.Id,
                 episodes.Count,
-                string.Join(", ", shows.Select(show => show.ID))
+                string.Join(", ", shows.Select(show => show.TmdbID))
             );
             return false;
         }
@@ -442,7 +442,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                     "TVmaze season {SeasonNumber} of show {TvMazeShowID} has no matching TMDB season on show {TmdbShowID}; skipping it.",
                     seasonNumber,
                     tvMazeShow.Id,
-                    show.ID
+                    show.TmdbID
                 );
                 continue;
             }
@@ -494,7 +494,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
             {
                 Series = show,
                 Season = tmdbSeason,
-                ChannelID = airingChannel?.ID,
+                ChannelID = airingChannel?.ChannelID,
                 Tracks = [new AiringTrackData(AiringKind.Original, show.OriginalLanguageCode, channel?.CountryCode)],
                 FirstEpisodeNumber = episodeCount > 0 ? 1 : null,
                 LastEpisodeNumber = episodeCount > 0 ? episodeCount : null,
@@ -518,7 +518,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                     tmdbSeason.SeasonNumber,
                     tvMazeShow.Id,
                     result.Airings.Count,
-                    show.ID,
+                    show.TmdbID,
                     result.SkippedWithoutAirstamp,
                     result.SkippedWithoutTmdbEpisode
                 );
@@ -530,7 +530,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                     tmdbSeason.SeasonNumber,
                     tvMazeShow.Id,
                     tmdbSeason.ID,
-                    show.ID
+                    show.TmdbID
                 );
                 continue;
             }

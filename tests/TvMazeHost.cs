@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -35,14 +36,14 @@ internal static class TvMazeHost
     }
 
     /// <summary>
-    /// A metadata service whose TMDB provider holds the given series.
+    /// A metadata service whose TMDB source holds the given series.
     /// </summary>
     /// <param name="series">The series a sweep walks.</param>
     /// <returns>The metadata service.</returns>
     public static IMetadataService MetadataService(params ISeries[] series)
     {
         var service = new Mock<IMetadataService>();
-        service.Setup(s => s.GetAllSeriesForProvider(IMetadataService.ProviderName.TMDB)).Returns(series);
+        service.Setup(s => s.GetAllSeriesForSource(MetadataSource.TMDB)).Returns(series);
         return service.Object;
     }
 
@@ -57,7 +58,8 @@ internal static class TvMazeHost
     public static ITmdbShow TmdbShow(int id, int? tvdbShowId, DateOnly? endDate = null, params ITmdbSeason[] seasons)
     {
         var show = new Mock<ITmdbShow>();
-        show.Setup(s => s.ID).Returns(id);
+        show.Setup(s => s.ID).Returns(new MetadataGuid(MetadataSource.TMDB, MetadataEntityType.Series, id.ToString(CultureInfo.InvariantCulture)));
+        show.Setup(s => s.TmdbID).Returns(id);
         show.Setup(s => s.Title).Returns($"TMDB show {id}");
         show.Setup(s => s.TvdbShowID).Returns(tvdbShowId);
         show.Setup(s => s.EndDate).Returns(endDate is { } date ? new PartialDateOnly(date) : null);
@@ -113,7 +115,7 @@ internal sealed class RecordingScheduleService
                     ChannelIDs[name] = channelId = Guid.NewGuid();
 
                 var channel = new Mock<IAiringChannel>();
-                channel.Setup(c => c.ID).Returns(channelId);
+                channel.Setup(c => c.ChannelID).Returns(channelId);
                 channel.Setup(c => c.Name).Returns(name);
                 channel.Setup(c => c.Type).Returns(type);
                 return channel.Object;
