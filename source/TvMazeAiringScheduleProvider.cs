@@ -261,7 +261,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
 
             case IShokoSeries shokoSeries:
             {
-                var shows = Distinct(shokoSeries.TmdbShows);
+                var shows = Distinct(shokoSeries.GetLinkedSeries<ITmdbShow>(MetadataSource.TMDB));
                 if (shows.Count == 0)
                     _logger.LogDebug(
                         "Skipping shoko series {ShokoSeriesID} (\"{SeriesTitle}\"): it has no linked TMDB shows to key TVmaze through.",
@@ -281,7 +281,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
 
             default:
             {
-                var shows = Distinct(series.ShokoSeries.SelectMany(shokoSeries => shokoSeries.TmdbShows));
+                var shows = Distinct(series.ShokoSeries.SelectMany(shokoSeries => shokoSeries.GetLinkedSeries<ITmdbShow>(MetadataSource.TMDB)));
                 if (shows.Count == 0)
                     _logger.LogDebug(
                         "Skipping {Source} series {SeriesID} (\"{SeriesTitle}\"): it is not a TMDB show, and reaches none through its {ShokoSeriesCount} shoko series.",

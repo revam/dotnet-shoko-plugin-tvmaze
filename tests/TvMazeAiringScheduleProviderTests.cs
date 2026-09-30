@@ -314,7 +314,7 @@ public class TvMazeAiringScheduleProviderTests
         series.Setup(s => s.ID).Returns(new MetadataGuid(MetadataSource.Shoko, MetadataEntityType.Series, id.ToString(CultureInfo.InvariantCulture)));
         series.Setup(s => s.LocalID).Returns(id);
         series.Setup(s => s.Title).Returns($"Shoko series {id}");
-        series.Setup(s => s.TmdbShows).Returns(shows);
+        series.Setup(s => s.LinkedSeries).Returns(shows);
         return series.Object;
     }
 
