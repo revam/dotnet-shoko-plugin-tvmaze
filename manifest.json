@@ -16,6 +16,22 @@
   ],
   "releases": [
     {
+      "version": "1.0.1",
+      "tag": "v1.0.1",
+      "released_at": "2026-09-30T16:38:27.6051199Z",
+      "channel": "Stable",
+      "release_notes": "Rebuilt against the abstractions \u00606.0.0-alpha.95\u0060 release, where a Shoko series reaches its TMDB shows through its linked series. Schedules are still keyed through each linked TMDB show\u0027s TheTVDB ID and written as before.\n\nRequires Shoko Server with abstractions \u00606.0.0-alpha.95\u0060.",
+      "dependencies": [],
+      "archives": [
+        {
+          "runtime": "any",
+          "abstraction": "6.0.0",
+          "url": "https://github.com/revam/dotnet-shoko-plugin-tvmaze/releases/download/v1.0.1/TVmazeAiringSchedule-v1.0.1-any.zip",
+          "checksum": "sha256:8d922103dff694826866be4b62e88bee18aff207822f83adb01f526c2de40e8e"
+        }
+      ]
+    },
+    {
       "version": "1.0.0",
       "tag": "v1.0.0",
       "released_at": "2026-09-18T04:19:16.7896563Z",
