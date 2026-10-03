@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Shoko.Abstractions.Metadata;
-using Shoko.Abstractions.Metadata.Tmdb;
 using Xunit;
 
 namespace Shoko.Plugin.TvMaze.Tests;
@@ -153,7 +152,7 @@ public class TvMazeSweepTests
 
     #region Helpers
 
-    private static ITmdbShow TmdbShow(int id, int tvdbShowId, DateOnly? endDate = null)
+    private static ISeries TmdbShow(int id, int tvdbShowId, DateOnly? endDate = null)
         => TvMazeHost.TmdbShow(id, tvdbShowId, endDate);
 
     private static TvMazeAiringScheduleProvider Provider(StubTvMazeApi api, params ISeries[] series)

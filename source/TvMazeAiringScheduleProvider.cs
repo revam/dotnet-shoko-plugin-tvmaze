@@ -10,7 +10,6 @@ using Shoko.Abstractions.Metadata;
 using Shoko.Abstractions.Metadata.Airing;
 using Shoko.Abstractions.Metadata.Services;
 using Shoko.Abstractions.Metadata.Shoko;
-using Shoko.Abstractions.Metadata.Tmdb;
 using Shoko.Plugin.TvMaze.Client;
 using Shoko.Plugin.TvMaze.Mapping;
 
@@ -18,7 +17,7 @@ namespace Shoko.Plugin.TvMaze;
 
 /// <summary>
 /// Airing schedule provider backed by <see href="https://www.tvmaze.com"/>,
-/// keyed through a TMDB show's <see cref="ITmdbShow.TvdbShowID"/> (TVmaze has
+/// keyed through the TheTVDB ID a TMDB show lists in its cross-source IDs (TVmaze has
 /// no AniDB or TMDB IDs of its own to look shows up by). Schedules are always
 /// written against TMDB shows, seasons and episodes, which are core
 /// <c>ISeries</c>/<c>ISeason</c>/<c>IEpisode</c> entities, so no entity
@@ -29,7 +28,7 @@ namespace Shoko.Plugin.TvMaze;
 /// <para>
 /// A refresh, on the other hand, is requested for whatever entity the caller
 /// happened to have in hand — for an ordinary series refresh that is an
-/// <see cref="IShokoSeries"/>, not an <see cref="ITmdbShow"/> — so
+/// <see cref="IShokoSeries"/>, not a TMDB show — so
 /// <see cref="RefreshAsync(ISeries, CancellationToken)"/> resolves the linked
 /// TMDB shows itself instead of demanding one.
 /// </para>
@@ -119,8 +118,8 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
         );
 
         var shows = plan.Shows
-            .Where(show => show.TmdbID > after)
-            .OrderBy(show => show.TmdbID)
+            .Where(show => show.GetTmdbID() > after)
+            .OrderBy(show => show.GetTmdbID())
             .ToList();
         if (shows.Count == 0)
         {
@@ -141,7 +140,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                 if (await RefreshAsync(show, cancellationToken).ConfigureAwait(false))
                     refreshed++;
                 else
-                    _logger.LogDebug("TVmaze had nothing to write for TMDB show {TmdbShowID} (\"{ShowTitle}\").", show.TmdbID, show.Title);
+                    _logger.LogDebug("TVmaze had nothing to write for TMDB show {TmdbShowID} (\"{ShowTitle}\").", show.GetTmdbID(), show.Title);
             }
             catch (OperationCanceledException)
             {
@@ -155,10 +154,10 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                 // One show TVmaze answers oddly for is not worth stalling the
                 // walk over; the cursor moves past it either way.
                 failed++;
-                _logger.LogWarning(ex, "The TVmaze sweep failed for TMDB show {TmdbShowID} (\"{ShowTitle}\").", show.TmdbID, show.Title);
+                _logger.LogWarning(ex, "The TVmaze sweep failed for TMDB show {TmdbShowID} (\"{ShowTitle}\").", show.GetTmdbID(), show.Title);
             }
 
-            after = show.TmdbID;
+            after = show.GetTmdbID();
             swept++;
         }
 
@@ -234,7 +233,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
     /// refresh arrives for whatever entity the request was made for, so any
     /// series that can reach a TMDB show is accepted:
     /// <list type="bullet">
-    ///   <item>an <see cref="ITmdbShow"/> is used as-is;</item>
+    ///   <item>a TMDB show is used as-is;</item>
     ///   <item>
     ///     an <see cref="IShokoSeries"/> resolves to every TMDB show it is
     ///     linked to;
@@ -252,16 +251,16 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
     /// The distinct TMDB shows to refresh, which is empty when the series
     /// reaches none.
     /// </returns>
-    private IReadOnlyList<ITmdbShow> ResolveTmdbShows(ISeries series)
+    private IReadOnlyList<ISeries> ResolveTmdbShows(ISeries series)
     {
         switch (series)
         {
-            case ITmdbShow show:
+            case { } show when show.IsTmdbShow():
                 return [show];
 
             case IShokoSeries shokoSeries:
             {
-                var shows = Distinct(shokoSeries.GetLinkedSeries<ITmdbShow>(MetadataSource.TMDB));
+                var shows = Distinct(shokoSeries.GetLinkedSeries(MetadataSource.TMDB));
                 if (shows.Count == 0)
                     _logger.LogDebug(
                         "Skipping shoko series {ShokoSeriesID} (\"{SeriesTitle}\"): it has no linked TMDB shows to key TVmaze through.",
@@ -274,14 +273,14 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                         shokoSeries.LocalID,
                         shokoSeries.Title,
                         shows.Count,
-                        string.Join(", ", shows.Select(show => show.TmdbID))
+                        string.Join(", ", shows.Select(show => show.GetTmdbID()))
                     );
                 return shows;
             }
 
             default:
             {
-                var shows = Distinct(series.ShokoSeries.SelectMany(shokoSeries => shokoSeries.GetLinkedSeries<ITmdbShow>(MetadataSource.TMDB)));
+                var shows = Distinct(series.ShokoSeries.SelectMany(shokoSeries => shokoSeries.GetLinkedSeries(MetadataSource.TMDB)));
                 if (shows.Count == 0)
                     _logger.LogDebug(
                         "Skipping {Source} series {SeriesID} (\"{SeriesTitle}\"): it is not a TMDB show, and reaches none through its {ShokoSeriesCount} shoko series.",
@@ -297,14 +296,14 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                         series.ID,
                         series.Title,
                         shows.Count,
-                        string.Join(", ", shows.Select(show => show.TmdbID))
+                        string.Join(", ", shows.Select(show => show.GetTmdbID()))
                     );
                 return shows;
             }
         }
 
-        static IReadOnlyList<ITmdbShow> Distinct(IEnumerable<ITmdbShow> shows)
-            => shows.DistinctBy(show => show.TmdbID).ToList();
+        static IReadOnlyList<ISeries> Distinct(IEnumerable<ISeries> shows)
+            => shows.Where(show => show.IsTmdbShow()).DistinctBy(show => show.GetTmdbID()).ToList();
     }
 
     /// <summary>
@@ -317,16 +316,16 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
     /// <param name="shows">The TMDB shows to refresh.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns><c>true</c> when at least one show produced a schedule.</returns>
-    private async Task<bool> RefreshTmdbShowsAsync(IReadOnlyList<ITmdbShow> shows, CancellationToken cancellationToken)
+    private async Task<bool> RefreshTmdbShowsAsync(IReadOnlyList<ISeries> shows, CancellationToken cancellationToken)
     {
-        var keyed = new List<(int TvdbShowID, ITmdbShow Show)>(shows.Count);
+        var keyed = new List<(int TvdbShowID, ISeries Show)>(shows.Count);
         foreach (var show in shows)
         {
-            if (show.TvdbShowID is not { } tvdbShowId)
+            if (show.GetTvdbShowID() is not { } tvdbShowId)
             {
                 _logger.LogDebug(
                     "Skipping TMDB show {TmdbShowID} (\"{ShowTitle}\"): it has no TheTVDB ID, which is the only key TVmaze can be looked up by.",
-                    show.TmdbID,
+                    show.GetTmdbID(),
                     show.Title
                 );
                 continue;
@@ -359,7 +358,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
     /// <param name="shows">The TMDB shows carrying that TheTVDB ID.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns><c>true</c> when at least one show produced a schedule.</returns>
-    private async Task<bool> RefreshByTvdbShowIdAsync(int tvdbShowId, IReadOnlyList<ITmdbShow> shows, CancellationToken cancellationToken)
+    private async Task<bool> RefreshByTvdbShowIdAsync(int tvdbShowId, IReadOnlyList<ISeries> shows, CancellationToken cancellationToken)
     {
         var tvMazeShow = await _client.LookupShowByTvdbIdAsync(tvdbShowId, cancellationToken).ConfigureAwait(false);
         if (tvMazeShow is null)
@@ -367,7 +366,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
             _logger.LogDebug(
                 "TVmaze has no show for TheTVDB ID {TvdbShowID} (TMDB show(s) {TmdbShowIDs}).",
                 tvdbShowId,
-                string.Join(", ", shows.Select(show => show.TmdbID))
+                string.Join(", ", shows.Select(show => show.GetTmdbID()))
             );
             return false;
         }
@@ -385,7 +384,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                 "TVmaze show {TvMazeShowID} has no numbered episodes among its {EpisodeCount} episode(s), for TMDB show(s) {TmdbShowIDs}.",
                 tvMazeShow.Id,
                 episodes.Count,
-                string.Join(", ", shows.Select(show => show.TmdbID))
+                string.Join(", ", shows.Select(show => show.GetTmdbID()))
             );
             return false;
         }
@@ -421,7 +420,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns><c>true</c> when at least one season produced a schedule.</returns>
     private bool WriteShow(
-        ITmdbShow show,
+        ISeries show,
         Client.Models.TvMazeShow tvMazeShow,
         IReadOnlyList<IGrouping<int, Client.Models.TvMazeEpisode>> seasonGroups,
         IReadOnlyList<TvMazeChannelDescriptor> channels,
@@ -442,7 +441,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                     "TVmaze season {SeasonNumber} of show {TvMazeShowID} has no matching TMDB season on show {TmdbShowID}; skipping it.",
                     seasonNumber,
                     tvMazeShow.Id,
-                    show.TmdbID
+                    show.GetTmdbID()
                 );
                 continue;
             }
@@ -458,8 +457,8 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
     }
 
     private bool WriteSeason(
-        ITmdbShow show,
-        ITmdbSeason tmdbSeason,
+        ISeries show,
+        ISeason tmdbSeason,
         IEnumerable<Client.Models.TvMazeEpisode> tvMazeEpisodesInSeason,
         IReadOnlyList<TvMazeChannelDescriptor> channels,
         bool isFinished,
@@ -495,7 +494,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                 Series = show,
                 Season = tmdbSeason,
                 ChannelID = airingChannel?.ChannelID,
-                Tracks = [new AiringTrackData(AiringKind.Original, show.OriginalLanguageCode, channel?.CountryCode)],
+                Tracks = [new AiringTrackData(AiringKind.Original, show.OriginalLanguageCode ?? "unk", channel?.CountryCode)],
                 FirstEpisodeNumber = episodeCount > 0 ? 1 : null,
                 LastEpisodeNumber = episodeCount > 0 ? episodeCount : null,
                 IsFinished = isFinished,
@@ -518,7 +517,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                     tmdbSeason.SeasonNumber,
                     tvMazeShow.Id,
                     result.Airings.Count,
-                    show.TmdbID,
+                    show.GetTmdbID(),
                     result.SkippedWithoutAirstamp,
                     result.SkippedWithoutTmdbEpisode
                 );
@@ -530,7 +529,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                     tmdbSeason.SeasonNumber,
                     tvMazeShow.Id,
                     tmdbSeason.ID,
-                    show.TmdbID
+                    show.GetTmdbID()
                 );
                 continue;
             }

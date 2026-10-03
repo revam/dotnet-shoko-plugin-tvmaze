@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Shoko.Abstractions.Metadata;
-using Shoko.Abstractions.Metadata.Tmdb;
 
 namespace Shoko.Plugin.TvMaze.Mapping;
 
@@ -61,7 +60,7 @@ public static class TvMazeSweepPlanner
     {
         ArgumentNullException.ThrowIfNull(series);
 
-        var shows = new List<ITmdbShow>();
+        var shows = new List<ISeries>();
         var total = 0;
         var notAShow = 0;
         var withoutTvdbShowId = 0;
@@ -70,13 +69,14 @@ public static class TvMazeSweepPlanner
         foreach (var entry in series)
         {
             total++;
-            if (entry is not ITmdbShow show)
+            if (!entry.IsTmdbShow())
             {
                 notAShow++;
                 continue;
             }
 
-            if (show.TvdbShowID is null)
+            var show = entry;
+            if (show.GetTvdbShowID() is null)
             {
                 withoutTvdbShowId++;
                 continue;
@@ -109,7 +109,7 @@ public static class TvMazeSweepPlanner
 /// How many shows ended further back than the configured cutoff.
 /// </param>
 public sealed record TvMazeSweepPlan(
-    IReadOnlyList<ITmdbShow> Shows,
+    IReadOnlyList<ISeries> Shows,
     int TotalSeries,
     int NotAShow,
     int WithoutTvdbShowID,

@@ -21,16 +21,16 @@ existing links.
   from a broken provider.
 - **Several linked shows**: one anime can be linked to several TMDB shows (a
   split-cour run is usually one TMDB show per cour), and all of them are
-  refreshed, not just the first. They are grouped by `TvdbShowID` first, so
+  refreshed, not just the first. They are grouped by TheTVDB ID first, so
   two TMDB shows keyed to the same TheTVDB show cost one lookup and one
   episode list between them, and each still gets its own schedules written
   against its own seasons and episodes. The refresh counts as work done when
   any one of them produced a schedule.
-- **Keying**: TVmaze has no AniDB or TMDB IDs of its own. Instead, a TMDB
-  show's `TvdbShowID` is looked up against
+- **Keying**: TVmaze has no AniDB or TMDB IDs of its own. Instead, the
+  TheTVDB ID a TMDB show lists in its `CrossSourceIDs` is looked up against
   `GET https://api.tvmaze.com/lookup/shows?thetvdb={id}`, which redirects
   (HTTP 301) to the matching show, or answers 404 when TVmaze has none. A
-  show with no `TvdbShowID` at all is skipped outright: this provider simply
+  show with no TheTVDB ID at all is skipped outright: this provider simply
   has nothing to key it on.
 - **Episodes**: `GET /shows/{id}/episodes` returns the full episode list, each
   carrying a precise `airstamp` (an ISO timestamp with an offset), which is

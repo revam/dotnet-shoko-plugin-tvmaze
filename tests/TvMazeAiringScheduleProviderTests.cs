@@ -9,7 +9,6 @@ using Shoko.Abstractions.Metadata;
 using Shoko.Abstractions.Metadata.Airing;
 using Shoko.Abstractions.Metadata.Services;
 using Shoko.Abstractions.Metadata.Shoko;
-using Shoko.Abstractions.Metadata.Tmdb;
 using Xunit;
 
 namespace Shoko.Plugin.TvMaze.Tests;
@@ -18,7 +17,7 @@ namespace Shoko.Plugin.TvMaze.Tests;
 /// Tests for what the provider does with the entity a refresh is requested
 /// for. The core hands <c>RefreshAsync</c> whatever the refresh was asked for
 /// — an <see cref="IShokoSeries"/> for an ordinary series refresh — so
-/// demanding an <see cref="ITmdbShow"/> would leave the provider silently
+/// demanding a TMDB show would leave the provider silently
 /// doing nothing, which is exactly the bug these tests pin down. Every
 /// response is a real TVmaze capture; see <see cref="TvMazeFixtures"/>.
 /// </summary>
@@ -289,26 +288,26 @@ public class TvMazeAiringScheduleProviderTests
             NullLogger<TvMazeAiringScheduleProvider>.Instance
         );
 
-    private static ITmdbEpisode TmdbEpisode(int number)
+    private static IEpisode TmdbEpisode(int number)
     {
-        var episode = new Mock<ITmdbEpisode>();
+        var episode = new Mock<IEpisode>();
         episode.Setup(e => e.EpisodeNumber).Returns(number);
         return episode.Object;
     }
 
-    private static ITmdbSeason TmdbSeason(int seasonNumber, string id, int episodeCount)
+    private static ISeason TmdbSeason(int seasonNumber, string id, int episodeCount)
     {
-        var season = new Mock<ITmdbSeason>();
+        var season = new Mock<ISeason>();
         season.Setup(s => s.ID).Returns(new MetadataGuid(MetadataSource.TMDB, MetadataEntityType.Season, id));
         season.Setup(s => s.SeasonNumber).Returns(seasonNumber);
         season.Setup(s => s.Episodes).Returns(Enumerable.Range(1, episodeCount).Select(TmdbEpisode).ToList());
         return season.Object;
     }
 
-    private static ITmdbShow TmdbShow(int id, int? tvdbShowId, params ITmdbSeason[] seasons)
+    private static ISeries TmdbShow(int id, int? tvdbShowId, params ISeason[] seasons)
         => TvMazeHost.TmdbShow(id, tvdbShowId, endDate: null, seasons);
 
-    private static IShokoSeries ShokoSeries(int id, params ITmdbShow[] shows)
+    private static IShokoSeries ShokoSeries(int id, params ISeries[] shows)
     {
         var series = new Mock<IShokoSeries>();
         series.Setup(s => s.ID).Returns(new MetadataGuid(MetadataSource.Shoko, MetadataEntityType.Series, id.ToString(CultureInfo.InvariantCulture)));

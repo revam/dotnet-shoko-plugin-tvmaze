@@ -1,7 +1,6 @@
 using System;
 using Moq;
 using Shoko.Abstractions.Metadata;
-using Shoko.Abstractions.Metadata.Tmdb;
 using Shoko.Plugin.TvMaze.Mapping;
 using Xunit;
 
@@ -92,13 +91,15 @@ public class TvMazeSweepPlannerTests
     }
 
     private static ISeries TmdbMovieShapedSeries()
-        => new Mock<ISeries>().Object;
-
-    private static ITmdbShow TmdbShow(int? tvdbShowId, DateOnly? endDate)
     {
-        var show = new Mock<ITmdbShow>();
-        show.Setup(s => s.TvdbShowID).Returns(tvdbShowId);
-        show.Setup(s => s.EndDate).Returns(endDate is { } date ? new PartialDateOnly(date) : null);
-        return show.Object;
+        var series = new Mock<ISeries>();
+        series.Setup(s => s.ID).Returns(new MetadataGuid(MetadataSource.TMDB, MetadataEntityType.Movie, "1"));
+        series.Setup(s => s.CrossSourceIDs).Returns([]);
+        return series.Object;
     }
+
+    private static ISeries TmdbShow(int? tvdbShowId, DateOnly? endDate)
+        => TvMazeHost.TmdbShow(++_nextShowID, tvdbShowId, endDate);
+
+    private static int _nextShowID;
 }

@@ -9,7 +9,6 @@ using Shoko.Abstractions.Config.Services;
 using Shoko.Abstractions.Metadata;
 using Shoko.Abstractions.Metadata.Airing;
 using Shoko.Abstractions.Metadata.Services;
-using Shoko.Abstractions.Metadata.Tmdb;
 
 namespace Shoko.Plugin.TvMaze.Tests;
 
@@ -55,18 +54,27 @@ internal static class TvMazeHost
     /// <param name="endDate">Optional. The show's known end date.</param>
     /// <param name="seasons">The show's TMDB seasons.</param>
     /// <returns>The show.</returns>
-    public static ITmdbShow TmdbShow(int id, int? tvdbShowId, DateOnly? endDate = null, params ITmdbSeason[] seasons)
+    public static ISeries TmdbShow(int id, int? tvdbShowId, DateOnly? endDate = null, params ISeason[] seasons)
     {
-        var show = new Mock<ITmdbShow>();
+        var show = new Mock<ISeries>();
         show.Setup(s => s.ID).Returns(new MetadataGuid(MetadataSource.TMDB, MetadataEntityType.Series, id.ToString(CultureInfo.InvariantCulture)));
-        show.Setup(s => s.TmdbID).Returns(id);
         show.Setup(s => s.Title).Returns($"TMDB show {id}");
-        show.Setup(s => s.TvdbShowID).Returns(tvdbShowId);
+        show.Setup(s => s.CrossSourceIDs).Returns(TvdbSeriesIDs(tvdbShowId));
         show.Setup(s => s.EndDate).Returns(endDate is { } date ? new PartialDateOnly(date) : null);
         show.Setup(s => s.OriginalLanguageCode).Returns("ja");
         show.Setup(s => s.Seasons).Returns(seasons);
         return show.Object;
     }
+
+    /// <summary>
+    /// The cross-source IDs TMDB lists for a show with the given TheTVDB ID.
+    /// </summary>
+    /// <param name="tvdbShowId">The TheTVDB show ID, if any.</param>
+    /// <returns>The IDs.</returns>
+    public static IReadOnlyList<MetadataGuid> TvdbSeriesIDs(int? tvdbShowId)
+        => tvdbShowId is { } tvdbID
+            ? [new MetadataGuid(MetadataSource.Parse("tvdb"), MetadataEntityType.Series, tvdbID.ToString(CultureInfo.InvariantCulture))]
+            : [];
 }
 
 /// <summary>

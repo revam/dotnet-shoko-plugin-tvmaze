@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Shoko.Abstractions.Metadata.Airing;
-using Shoko.Abstractions.Metadata.Tmdb;
+using Shoko.Abstractions.Metadata;
 using Shoko.Plugin.TvMaze.Client.Models;
 
 namespace Shoko.Plugin.TvMaze.Mapping;
@@ -33,7 +33,7 @@ public static class TvMazeEpisodeMatcher
     /// of <paramref name="season"/>, plus a count of everything that was
     /// skipped, broken down by why.
     /// </returns>
-    public static TvMazeEpisodeMatchResult Match(IEnumerable<TvMazeEpisode> episodes, int seasonNumber, ITmdbSeason season)
+    public static TvMazeEpisodeMatchResult Match(IEnumerable<TvMazeEpisode> episodes, int seasonNumber, ISeason season)
     {
         var airings = new List<EpisodeAiringData>();
         var skippedWithoutAirstamp = 0;

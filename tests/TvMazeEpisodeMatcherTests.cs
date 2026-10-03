@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Moq;
-using Shoko.Abstractions.Metadata.Tmdb;
+using Shoko.Abstractions.Metadata;
 using Shoko.Plugin.TvMaze.Client.Models;
 using Shoko.Plugin.TvMaze.Mapping;
 using Xunit;
@@ -16,16 +16,16 @@ namespace Shoko.Plugin.TvMaze.Tests;
 /// </summary>
 public class TvMazeEpisodeMatcherTests
 {
-    private static Mock<ITmdbEpisode> TmdbEpisode(int number)
+    private static Mock<IEpisode> TmdbEpisode(int number)
     {
-        var episode = new Mock<ITmdbEpisode>();
+        var episode = new Mock<IEpisode>();
         episode.Setup(e => e.EpisodeNumber).Returns(number);
         return episode;
     }
 
-    private static ITmdbSeason Season(params Mock<ITmdbEpisode>[] episodes)
+    private static ISeason Season(params Mock<IEpisode>[] episodes)
     {
-        var season = new Mock<ITmdbSeason>();
+        var season = new Mock<ISeason>();
         season.Setup(s => s.Episodes).Returns(episodes.Select(e => e.Object).ToList());
         return season.Object;
     }
