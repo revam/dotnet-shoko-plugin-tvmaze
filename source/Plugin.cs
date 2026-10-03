@@ -15,6 +15,16 @@ namespace Shoko.Plugin.TvMaze;
 /// </summary>
 public class Plugin : IPlugin, IPluginServiceRegistration
 {
+    /// <summary>
+    /// The embedded resource of the plugin's thumbnail.
+    /// </summary>
+    internal const string ThumbnailResourceName = "Shoko.Plugin.TvMaze.Assets.thumbnail.svg";
+
+    /// <summary>
+    /// The embedded resource of the plugin's icon.
+    /// </summary>
+    internal const string IconResourceName = "Shoko.Plugin.TvMaze.Assets.icon.svg";
+
     /// <inheritdoc/>
     public Guid ID { get; private init; } = new("5c09a10b-b36f-4a04-93db-6b085a0aafc2");
 
@@ -26,6 +36,12 @@ public class Plugin : IPlugin, IPluginServiceRegistration
         Fills in broadcast and streaming airing schedules for TMDB-linked shows from TVmaze,
         keyed through the TVDB ID.
     """;
+
+    /// <inheritdoc/>
+    public string? EmbeddedThumbnailResourceName => ThumbnailResourceName;
+
+    /// <inheritdoc/>
+    public string? EmbeddedIconResourceName => IconResourceName;
 
     /// <inheritdoc/>
     public static void RegisterServices(IServiceCollection serviceCollection, IApplicationPaths applicationPaths)
