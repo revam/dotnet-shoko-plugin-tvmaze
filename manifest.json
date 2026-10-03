@@ -16,6 +16,22 @@
   ],
   "releases": [
     {
+      "version": "1.0.2",
+      "tag": "v1.0.2",
+      "released_at": "2026-10-03T16:54:47.8849503Z",
+      "channel": "Stable",
+      "release_notes": "Rebuilt against the abstractions \u00606.0.0-alpha.98\u0060 release, where TMDb data comes from the bundled TMDb plugin instead of the core. Schedules are still keyed through each linked TMDb show\u0027s TheTVDB ID, now read from the show\u0027s cross-source IDs, and written as before. The plugin also has its own icon and thumbnail now.\n\nRequires Shoko Server with abstractions \u00606.0.0-alpha.98\u0060.",
+      "dependencies": [],
+      "archives": [
+        {
+          "runtime": "any",
+          "abstraction": "6.0.0",
+          "url": "https://github.com/revam/dotnet-shoko-plugin-tvmaze/releases/download/v1.0.2/TVmazeAiringSchedule-v1.0.2-any.zip",
+          "checksum": "sha256:d5acc01bead4359803674cc8a7f64c4bce01d5332e638d132dfc67ef4777828b"
+        }
+      ]
+    },
+    {
       "version": "1.0.1",
       "tag": "v1.0.1",
       "released_at": "2026-09-30T16:38:27.6051199Z",
