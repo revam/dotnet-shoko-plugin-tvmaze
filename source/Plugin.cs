@@ -29,7 +29,7 @@ public class Plugin : IPlugin, IPluginServiceRegistration
     public Guid ID { get; private init; } = new("5c09a10b-b36f-4a04-93db-6b085a0aafc2");
 
     /// <inheritdoc/>
-    public string Name { get; private set; } = "TVmaze Airing Schedule";
+    public string Name { get; private set; } = "TVmaze";
 
     /// <inheritdoc/>
     public string Description { get; private set; } = """

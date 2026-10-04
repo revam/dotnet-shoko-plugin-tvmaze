@@ -1,4 +1,4 @@
-# Shoko TVmaze Airing Schedule Plugin
+# Shoko TVmaze Plugin
 
 A [Shoko](https://shokoanime.com/) plugin that fills in broadcast and
 streaming airing schedules for TMDB-linked shows from
@@ -133,7 +133,7 @@ How often the sweep runs is the server's setting rather than the plugin's: the p
    ```
    https://raw.githubusercontent.com/revam/dotnet-shoko-plugin-tvmaze/metadata/manifest.json
    ```
-3. Go to **Settings → Plugins → Browse** and find **TVmaze Airing Schedule**.
+3. Go to **Settings → Plugins → Browse** and find **TVmaze**.
 4. Click **Install** on the desired version.
 5. Restart Shoko.
 
