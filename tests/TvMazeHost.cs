@@ -104,7 +104,7 @@ internal sealed class RecordingScheduleService
 
     public IAiringScheduleService Object { get; }
 
-    public List<(string Name, AiringChannelType Type)> RegisteredChannels { get; } = [];
+    public List<(string Name, AiringChannelType Type, string? CountryCode)> RegisteredChannels { get; } = [];
 
     public Dictionary<string, Guid> ChannelIDs { get; } = [];
 
@@ -115,10 +115,10 @@ internal sealed class RecordingScheduleService
     public RecordingScheduleService()
     {
         var mock = new Mock<IAiringScheduleService>();
-        mock.Setup(service => service.FindOrRegisterChannel(It.IsAny<string>(), It.IsAny<AiringChannelType>()))
-            .Returns((string name, AiringChannelType type) =>
+        mock.Setup(service => service.FindOrRegisterChannel(It.IsAny<string>(), It.IsAny<AiringChannelType>(), It.IsAny<string?>()))
+            .Returns((string name, AiringChannelType type, string? countryCode) =>
             {
-                RegisteredChannels.Add((name, type));
+                RegisteredChannels.Add((name, type, countryCode));
                 if (!ChannelIDs.TryGetValue(name, out var channelId))
                     ChannelIDs[name] = channelId = Guid.NewGuid();
 
@@ -126,6 +126,7 @@ internal sealed class RecordingScheduleService
                 channel.Setup(c => c.ChannelID).Returns(channelId);
                 channel.Setup(c => c.Name).Returns(name);
                 channel.Setup(c => c.Type).Returns(type);
+                channel.Setup(c => c.CountryCode).Returns(countryCode);
                 return channel.Object;
             });
         mock.Setup(service => service.AddOrUpdateSchedule(It.IsAny<IAiringScheduleProvider>(), It.IsAny<AiringScheduleData>()))

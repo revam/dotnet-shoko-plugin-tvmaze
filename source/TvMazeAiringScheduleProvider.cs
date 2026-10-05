@@ -479,7 +479,7 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
         {
             var airingChannel = channel is null
                 ? null
-                : _airingScheduleService.FindOrRegisterChannel(channel.Name, channel.Type);
+                : _airingScheduleService.FindOrRegisterChannel(channel.Name, channel.Type, channel.ChannelCountryCode);
 
             TimeZoneInfo? timeZone = null;
             if (channel?.TimeZoneId is { } timeZoneId && !TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneId, out timeZone))

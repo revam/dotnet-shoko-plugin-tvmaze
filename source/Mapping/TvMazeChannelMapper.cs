@@ -1,6 +1,6 @@
+using System;
 using System.Collections.Generic;
 using Shoko.Abstractions.Metadata.Airing;
-using Shoko.Abstractions.Metadata.Services;
 using Shoko.Plugin.TvMaze.Client.Models;
 
 namespace Shoko.Plugin.TvMaze.Mapping;
@@ -8,10 +8,9 @@ namespace Shoko.Plugin.TvMaze.Mapping;
 /// <summary>
 /// Turns a TVmaze show's <c>network</c> and <c>webChannel</c> fields into the
 /// channels <c>IAiringScheduleService.FindOrRegisterChannel</c> expects: a
-/// Television channel for the network, a Streaming channel for the web
-/// channel, named regionally through
-/// <see cref="IAiringScheduleService.GetRegionalChannelName"/> whenever
-/// TVmaze names a country for it. A show can carry either, both (a show that
+/// Television channel for the network, in the country TVmaze gives it, and a
+/// Streaming channel for the web channel, in its country only when the
+/// service is regional. A show can carry either, both (a show that
 /// simulcasts on a streaming service alongside its broadcast run) or
 /// neither.
 /// </summary>
@@ -22,6 +21,24 @@ namespace Shoko.Plugin.TvMaze.Mapping;
 /// </remarks>
 public static class TvMazeChannelMapper
 {
+    /// <summary>
+    /// Streaming services that are one channel worldwide, so they are never
+    /// registered under the country TVmaze happens to give them.
+    /// </summary>
+    private static readonly HashSet<string> GlobalStreamingBrands = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Amazon",
+        "Amazon Prime Video",
+        "Apple TV",
+        "Apple TV+",
+        "Crunchyroll",
+        "Disney+",
+        "HIDIVE",
+        "Netflix",
+        "Prime Video",
+        "YouTube",
+    };
+
     /// <summary>
     /// Resolves the channels a TVmaze show airs on.
     /// </summary>
@@ -52,13 +69,12 @@ public static class TvMazeChannelMapper
             return false;
         }
 
-        var countryCode = string.IsNullOrWhiteSpace(network.Country?.Code) ? null : network.Country.Code;
-        var name = countryCode is null
-            ? network.Name
-            : IAiringScheduleService.GetRegionalChannelName(network.Name, countryCode);
+        var name = network.Name.Trim();
+        var countryCode = string.IsNullOrWhiteSpace(network.Country?.Code) ? null : network.Country.Code.Trim().ToUpperInvariant();
+        var channelCountryCode = type is AiringChannelType.Streaming && GlobalStreamingBrands.Contains(name) ? null : countryCode;
         var timeZoneId = string.IsNullOrWhiteSpace(network.Country?.Timezone) ? null : network.Country.Timezone;
 
-        descriptor = new TvMazeChannelDescriptor(name, type, countryCode, timeZoneId);
+        descriptor = new TvMazeChannelDescriptor(name, type, countryCode, channelCountryCode, timeZoneId);
         return true;
     }
 }

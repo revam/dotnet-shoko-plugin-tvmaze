@@ -201,7 +201,7 @@ public class TvMazeAiringScheduleProviderTests
     #region Channels, time zones and timestamps
 
     [Fact]
-    public async Task The_network_reaches_shoko_as_a_regional_television_channel()
+    public async Task The_network_reaches_shoko_as_a_television_channel_in_its_country()
     {
         using var api = new StubTvMazeApi()
             .WithShow(FrierenTvdbShowID, "frieren-show.json")
@@ -214,11 +214,12 @@ public class TvMazeAiringScheduleProviderTests
         // NTV, in Japan, is what the live /lookup/shows?thetvdb=424536
         // response names as the show's network.
         var channel = Assert.Single(service.RegisteredChannels);
-        Assert.Equal("NTV (JP)", channel.Name);
+        Assert.Equal("NTV", channel.Name);
         Assert.Equal(AiringChannelType.Television, channel.Type);
+        Assert.Equal("JP", channel.CountryCode);
 
         var schedule = Assert.Single(service.Schedules);
-        Assert.Equal(service.ChannelIDs["NTV (JP)"], schedule.ChannelID);
+        Assert.Equal(service.ChannelIDs["NTV"], schedule.ChannelID);
         Assert.Equal("Asia/Tokyo", schedule.TimeZone?.Id);
         Assert.Equal("https://www.tvmaze.com/shows/69956/frieren-beyond-journeys-end", schedule.Url);
         var track = Assert.Single(schedule.Tracks);

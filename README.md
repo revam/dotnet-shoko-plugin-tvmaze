@@ -51,11 +51,11 @@ existing links.
 - **Channels**: the show's `network` becomes a Television channel, its
   `webChannel` becomes a Streaming channel — a show can have either, both (a
   simulcast on a streaming service alongside its broadcast run), or neither.
-  When TVmaze names a country for the network or web channel, the channel is
-  registered under its regional name (`IAiringScheduleService.GetRegionalChannelName`,
-  e.g. `TV Tokyo (JP)`), so multiple providers naming the same regional
-  service converge on one channel. The channel's time zone comes from
-  `network.country.timezone`.
+  A network is registered in the country TVmaze names for it (`TV Tokyo` in
+  `JP`), so it converges with the same station from other providers. A web
+  channel gets TVmaze's country only when the service is regional; a global
+  one such as Netflix or Crunchyroll is registered without a country. The
+  channel's time zone comes from `network.country.timezone`.
 - **Finished shows**: TVmaze reports one run `status` for the whole show, not
   per season, so whether a given season's schedule is "finished" is inferred:
   every season below the show's latest is necessarily done, and the latest
