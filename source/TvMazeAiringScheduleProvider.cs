@@ -19,10 +19,11 @@ namespace Shoko.Plugin.TvMaze;
 /// Airing schedule provider backed by <see href="https://www.tvmaze.com"/>,
 /// keyed through the TheTVDB ID a TMDB show lists in its cross-source IDs (TVmaze has
 /// no AniDB or TMDB IDs of its own to look shows up by). Schedules are always
-/// written against TMDB shows, seasons and episodes, which are core
-/// <c>ISeries</c>/<c>ISeason</c>/<c>IEpisode</c> entities, so no entity
-/// resolver is needed: shoko series pick the schedules up through their
-/// normal linked-entity walk.
+/// written against TMDB shows and seasons, which are core
+/// <c>ISeries</c>/<c>ISeason</c> entities, so no entity resolver is needed:
+/// shoko series pick the schedules up through their normal linked-entity
+/// walk. Each airing is placed by its TVmaze episode number, and the core
+/// resolves it to the TMDB episode when it is read.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -447,9 +448,9 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
             }
 
             var isFinished = TvMazeScheduleCoverage.IsSeasonFinished(seasonNumber, latestSeasonNumber, tvMazeShow.Status);
-            var episodeCount = tmdbSeason.Episodes.Count;
+            var lastEpisodeNumber = TvMazeScheduleCoverage.GetLastEpisodeNumber(group, isFinished);
 
-            if (WriteSeason(show, tmdbSeason, group, channels, isFinished, episodeCount, tvMazeShow))
+            if (WriteSeason(show, tmdbSeason, group, channels, isFinished, lastEpisodeNumber, tvMazeShow))
                 wroteAnything = true;
         }
 
@@ -462,11 +463,22 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
         IEnumerable<Client.Models.TvMazeEpisode> tvMazeEpisodesInSeason,
         IReadOnlyList<TvMazeChannelDescriptor> channels,
         bool isFinished,
-        int episodeCount,
+        int? lastEpisodeNumber,
         Client.Models.TvMazeShow tvMazeShow
     )
     {
-        var tvMazeEpisodes = tvMazeEpisodesInSeason as IReadOnlyCollection<Client.Models.TvMazeEpisode> ?? tvMazeEpisodesInSeason.ToList();
+        var result = TvMazeAiringMapper.Map(tvMazeEpisodesInSeason, tmdbSeason.SeasonNumber);
+        if (result.SkippedWithoutAirstamp > 0 || result.SkippedUnnumbered > 0)
+            _logger.LogDebug(
+                "TVmaze season {SeasonNumber} of show {TvMazeShowID}: {Airings} airing(s) for TMDB show {TmdbShowID}, {WithoutAirstamp} episode(s) had no air time yet, and {Unnumbered} special(s) had no episode number.",
+                tmdbSeason.SeasonNumber,
+                tvMazeShow.Id,
+                result.Airings.Count,
+                show.GetTmdbID(),
+                result.SkippedWithoutAirstamp,
+                result.SkippedUnnumbered
+            );
+
         var wroteAnything = false;
 
         // A show with neither a network nor a web channel still has airing
@@ -495,8 +507,8 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
                 Season = tmdbSeason,
                 ChannelID = airingChannel?.ChannelID,
                 Tracks = [new AiringTrackData(AiringKind.Original, show.OriginalLanguageCode ?? "unk", channel?.CountryCode)],
-                FirstEpisodeNumber = episodeCount > 0 ? 1 : null,
-                LastEpisodeNumber = episodeCount > 0 ? episodeCount : null,
+                FirstEpisodeNumber = 1,
+                LastEpisodeNumber = lastEpisodeNumber,
                 IsFinished = isFinished,
                 TimeZone = timeZone,
                 // Left null on purpose: the identity is then derived from the
@@ -509,23 +521,10 @@ public sealed class TvMazeAiringScheduleProvider : IAiringScheduleProvider<TvMaz
             };
 
             var schedule = _airingScheduleService.AddOrUpdateSchedule(this, data);
-
-            var result = TvMazeEpisodeMatcher.Match(tvMazeEpisodes, tmdbSeason.SeasonNumber, tmdbSeason);
-            if (result.SkippedWithoutAirstamp > 0 || result.SkippedWithoutTmdbEpisode > 0)
-                _logger.LogDebug(
-                    "TVmaze season {SeasonNumber} of show {TvMazeShowID}: {Matched} episode(s) matched TMDB show {TmdbShowID}, {WithoutAirstamp} had no air time yet, and {WithoutEpisode} had no matching TMDB episode.",
-                    tmdbSeason.SeasonNumber,
-                    tvMazeShow.Id,
-                    result.Airings.Count,
-                    show.GetTmdbID(),
-                    result.SkippedWithoutAirstamp,
-                    result.SkippedWithoutTmdbEpisode
-                );
-
             if (result.Airings.Count == 0)
             {
                 _logger.LogDebug(
-                    "TVmaze season {SeasonNumber} of show {TvMazeShowID} matched no episodes on TMDB season {TmdbSeasonID} of show {TmdbShowID}; the schedule is left without airings.",
+                    "TVmaze season {SeasonNumber} of show {TvMazeShowID} has no numbered episodes with an air time for TMDB season {TmdbSeasonID} of show {TmdbShowID}; the schedule is left without airings.",
                     tmdbSeason.SeasonNumber,
                     tvMazeShow.Id,
                     tmdbSeason.ID,

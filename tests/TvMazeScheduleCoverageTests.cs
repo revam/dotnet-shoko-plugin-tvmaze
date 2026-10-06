@@ -1,3 +1,4 @@
+using Shoko.Plugin.TvMaze.Client.Models;
 using Shoko.Plugin.TvMaze.Mapping;
 using Xunit;
 
@@ -40,5 +41,14 @@ public class TvMazeScheduleCoverageTests
     public void A_single_season_show_that_is_running_is_not_finished()
     {
         Assert.False(TvMazeScheduleCoverage.IsSeasonFinished(seasonNumber: 1, latestSeasonNumber: 1, showStatus: "Running"));
+    }
+
+    [Fact]
+    public void A_finished_season_ends_at_its_highest_episode_number_and_a_running_one_is_open()
+    {
+        TvMazeEpisode[] episodes = [new() { Number = 1 }, new() { Number = 2 }, new() { Number = null }];
+
+        Assert.Equal(2, TvMazeScheduleCoverage.GetLastEpisodeNumber(episodes, isFinished: true));
+        Assert.Null(TvMazeScheduleCoverage.GetLastEpisodeNumber(episodes, isFinished: false));
     }
 }

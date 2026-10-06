@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Shoko.Plugin.TvMaze.Client.Models;
 
 namespace Shoko.Plugin.TvMaze.Mapping;
 
@@ -33,5 +36,27 @@ public static class TvMazeScheduleCoverage
         var isLatestSeason = seasonNumber == latestSeasonNumber;
         var isShowRunning = string.Equals(showStatus, "Running", StringComparison.OrdinalIgnoreCase);
         return !(isLatestSeason && isShowRunning);
+    }
+
+    /// <summary>
+    /// The last episode a season's schedule covers. A finished season ends at
+    /// its highest TVmaze episode number, which is its count of numbered
+    /// episodes unless TVmaze skips a number; a running one is left open.
+    /// </summary>
+    /// <param name="seasonEpisodes">The season's TVmaze episodes.</param>
+    /// <param name="isFinished">Whether the season's schedule is finished.</param>
+    /// <returns>
+    /// The highest episode number of a finished season, or <c>null</c> for a
+    /// running season or one without numbered episodes.
+    /// </returns>
+    public static int? GetLastEpisodeNumber(IEnumerable<TvMazeEpisode> seasonEpisodes, bool isFinished)
+    {
+        if (!isFinished)
+            return null;
+
+        return seasonEpisodes
+            .Select(episode => episode.Number)
+            .Where(number => number is > 0)
+            .Max();
     }
 }

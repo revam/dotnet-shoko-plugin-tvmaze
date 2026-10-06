@@ -38,16 +38,17 @@ existing links.
   *broadcast day* and local clock time, and for a late-night slot the two
   disagree by a day — Frieren's 01:00 JST slot is listed under the previous
   day's `airdate` — so times are taken from the `airstamp` and submitted to
-  Shoko in UTC. TVmaze's season and episode numbers are
-  matched against the TMDB season with the same season number, and against
-  that season's episodes by episode number. An episode that cannot be matched
-  this way — because TVmaze and TMDB disagree on the numbering, most often —
-  is skipped rather than guessed at.
+  Shoko in UTC. TVmaze's seasons are matched against the TMDB season with the
+  same season number, and each numbered episode with an air time is submitted
+  by its episode number. Shoko resolves the number to the TMDB episode when
+  the airing is read, so an episode TMDB does not list yet still shows up and
+  links itself once it does. Unnumbered specials are skipped, since the TMDB
+  season only holds regular episodes to pin them to.
 - **Schedules**: one schedule per (TMDB season, channel), with a single
   `Original` track. TVmaze doesn't distinguish a dub or a subtitled release
   from the original broadcast, so that is the only kind this provider
-  declares. Coverage (`FirstEpisodeNumber`/`LastEpisodeNumber`) comes from the
-  TMDB season's own episode count.
+  declares. Coverage starts at episode 1, and a finished season ends at its
+  highest TVmaze episode number; a running season is left open-ended.
 - **Channels**: the show's `network` becomes a Television channel, its
   `webChannel` becomes a Streaming channel — a show can have either, both (a
   simulcast on a streaming service alongside its broadcast run), or neither.
@@ -163,8 +164,8 @@ The compiled assembly will be located at
 dotnet test tests/Shoko.Plugin.TvMaze.Tests.csproj
 ```
 
-Tests cover the pure mapping logic (matching TVmaze episodes to TMDB
-episodes, resolving TVmaze networks/web channels to airing channels, and the
+Tests cover the pure mapping logic (turning TVmaze episodes into numbered
+airings, resolving TVmaze networks/web channels to airing channels, and the
 finished-season heuristic) and the rate limiter's token bucket, all without
 needing a running Shoko server.
 

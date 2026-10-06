@@ -274,6 +274,24 @@ public class TvMazeAiringScheduleProviderTests
         Assert.Equal(2, service.Schedules.Count);
         Assert.True(service.Schedules[0].IsFinished);
         Assert.False(service.Schedules[1].IsFinished);
+        Assert.Equal([1, 1], service.Schedules.Select(schedule => schedule.FirstEpisodeNumber));
+        Assert.Equal([3, null], service.Schedules.Select(schedule => schedule.LastEpisodeNumber));
+    }
+
+    [Fact]
+    public async Task Episodes_the_tmdb_season_does_not_list_yet_are_still_written_by_number()
+    {
+        using var api = new StubTvMazeApi()
+            .WithShow(FrierenTvdbShowID, "frieren-show.json")
+            .WithEpisodes(FrierenTvMazeShowID, "frieren-episodes.json");
+        var service = new RecordingScheduleService();
+        var show = TmdbShow(id: 209868, tvdbShowId: FrierenTvdbShowID, TmdbSeason(seasonNumber: 2, id: "2", episodeCount: 1));
+
+        await Provider(api, service).RefreshAsync(show, TestContext.Current.CancellationToken);
+
+        var written = Assert.Single(service.WrittenAirings);
+        Assert.Equal([1, 2, 3], written.Airings.Select(airing => airing.SequenceNumber));
+        Assert.All(written.Airings, airing => Assert.Null(airing.Episode));
     }
 
     #endregion
