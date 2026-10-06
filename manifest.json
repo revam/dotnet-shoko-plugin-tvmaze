@@ -16,6 +16,22 @@
   ],
   "releases": [
     {
+      "version": "1.1.0",
+      "tag": "v1.1.0",
+      "released_at": "2026-10-06T21:27:59.1140948Z",
+      "channel": "Stable",
+      "release_notes": "The plugin is now called TVmaze. Airings are now stored by their place in the season, so every numbered episode with an air time is kept even before the linked TMDb season lists it, and finished seasons end at their last episode. Channels are registered under their own name in their country instead of with a suffix.\n\nRebuilt against the abstractions \u00606.0.0-alpha.99\u0060 release.\n\nRequires Shoko Server with abstractions \u00606.0.0-alpha.99\u0060.",
+      "dependencies": [],
+      "archives": [
+        {
+          "runtime": "any",
+          "abstraction": "6.0.0",
+          "url": "https://github.com/revam/dotnet-shoko-plugin-tvmaze/releases/download/v1.1.0/TVmazeAiringSchedule-v1.1.0-any.zip",
+          "checksum": "sha256:46132f0c7f7d735d73d28a8bed1b1ddd2998c4fbae385c779786430a71eabe0d"
+        }
+      ]
+    },
+    {
       "version": "1.0.2",
       "tag": "v1.0.2",
       "released_at": "2026-10-03T16:54:47.8849503Z",
