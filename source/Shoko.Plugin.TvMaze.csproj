@@ -23,7 +23,7 @@
             The server supplies the abstractions at runtime, so only
             compile-time assets are referenced here.
         -->
-        <PackageReference Include="Shoko.Abstractions" Version="6.0.0-alpha.99" ExcludeAssets="runtime" />
+        <PackageReference Include="Shoko.Abstractions" Version="6.0.0-alpha.100" ExcludeAssets="runtime" />
     </ItemGroup>
 
     <ItemGroup>
