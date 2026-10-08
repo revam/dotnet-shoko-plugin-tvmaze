@@ -16,6 +16,22 @@
   ],
   "releases": [
     {
+      "version": "1.1.1",
+      "tag": "v1.1.1",
+      "released_at": "2026-10-08T02:22:29.8712353Z",
+      "channel": "Stable",
+      "release_notes": "Rebuilt against the abstractions \u00606.0.0-alpha.100\u0060 release, where the interfaces that tie a configuration to its provider moved into \u0060Shoko.Abstractions.Config\u0060. Schedules from TVmaze are fetched and written as before.\n\nRequires Shoko Server with abstractions \u00606.0.0-alpha.100\u0060.",
+      "dependencies": [],
+      "archives": [
+        {
+          "runtime": "any",
+          "abstraction": "6.0.0",
+          "url": "https://github.com/revam/dotnet-shoko-plugin-tvmaze/releases/download/v1.1.1/TVmazeAiringSchedule-v1.1.1-any.zip",
+          "checksum": "sha256:1319d2df4bb89673831beaff3046c826573b02bf70e4245a506cb800d2a070af"
+        }
+      ]
+    },
+    {
       "version": "1.1.0",
       "tag": "v1.1.0",
       "released_at": "2026-10-06T21:27:59.1140948Z",
