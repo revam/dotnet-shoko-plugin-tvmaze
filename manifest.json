@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/ShokoAnime/ShokoServer/master/Shoko.BuildTools/manifest.schema.json",
   "type": "package",
   "id": "5c09a10b-b36f-4a04-93db-6b085a0aafc2",
-  "name": "TVmaze Airing Schedule",
+  "name": "TVmaze",
   "overview": "Fills in broadcast and streaming airing schedules for TMDB-linked shows from TVmaze, keyed through the TVDB ID.",
   "authors": "revam",
   "repository_url": "https://github.com/revam/dotnet-shoko-plugin-tvmaze",
