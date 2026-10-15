@@ -13,7 +13,7 @@ namespace Shoko.Plugin.TvMaze;
 /// and streaming airing times for TMDB-linked shows from
 /// <see href="https://www.tvmaze.com"/>, keyed through a show's TheTVDB ID.
 /// </summary>
-public class Plugin : IPlugin, IPluginServiceRegistration
+public class Plugin : IPlugin<TvMazeConfiguration>, IPluginServiceRegistration
 {
     /// <summary>
     /// The embedded resource of the plugin's thumbnail.

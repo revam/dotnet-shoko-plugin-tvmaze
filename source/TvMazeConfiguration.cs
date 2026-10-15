@@ -8,7 +8,7 @@ namespace Shoko.Plugin.TvMaze;
 /// Configuration for the TVmaze airing schedule provider.
 /// </summary>
 [Display(Name = "TVmaze")]
-public class TvMazeConfiguration : IAiringScheduleProviderConfiguration, INewtonsoftJsonConfiguration
+public class TvMazeConfiguration : IAiringScheduleProviderConfiguration, INewtonsoftJsonConfiguration, IPluginConfiguration
 {
     /// <summary>
     /// How many days past a show's known end date the sweep keeps refreshing
