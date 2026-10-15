@@ -14,9 +14,23 @@
     "tmdb",
     "calendar"
   ],
-  "thumbnail_url": "https://raw.githubusercontent.com/revam/dotnet-shoko-plugin-tvmaze/stable/source/Assets/thumbnail.svg",
-  "icon_url": "https://raw.githubusercontent.com/revam/dotnet-shoko-plugin-tvmaze/stable/source/Assets/icon.svg",
   "releases": [
+    {
+      "version": "1.2.0",
+      "tag": "v1.2.0",
+      "released_at": "2026-10-15T09:40:12.1415777Z",
+      "channel": "Stable",
+      "release_notes": "Its settings are now the plugin\u0027s own settings, so a client can open them from the plugin. Otherwise behaves as before.\n\nRequires Shoko Server with abstractions \u00606.0.0-alpha.107\u0060.",
+      "dependencies": [],
+      "archives": [
+        {
+          "runtime": "any",
+          "abstraction": "6.0.0",
+          "url": "https://github.com/revam/dotnet-shoko-plugin-tvmaze/releases/download/v1.2.0/TVmaze-v1.2.0-any.zip",
+          "checksum": "sha256:408bafd47bfeeefe73038edc64e973de0ff28c0ecdbc321449902069312859c2"
+        }
+      ]
+    },
     {
       "version": "1.1.2",
       "tag": "v1.1.2",
@@ -113,5 +127,7 @@
         }
       ]
     }
-  ]
+  ],
+  "thumbnail_url": "https://raw.githubusercontent.com/revam/dotnet-shoko-plugin-tvmaze/stable/source/Assets/thumbnail.svg",
+  "icon_url": "https://raw.githubusercontent.com/revam/dotnet-shoko-plugin-tvmaze/stable/source/Assets/icon.svg"
 }
